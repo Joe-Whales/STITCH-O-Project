@@ -1,0 +1,12 @@
+einops
+numpy
+opencv-python
+Pillow
+PyYAML
+scikit-learn
+scipy
+tabulate
+tensorboardX
+torch
+torchvision
+easydict
