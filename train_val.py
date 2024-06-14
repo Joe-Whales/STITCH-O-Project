@@ -52,7 +52,6 @@ def main():
         config = EasyDict(yaml.load(f, Loader=yaml.FullLoader))
 
     config.port = config.get("port", None)
-    # rank, world_size = setup_distributed(port=config.port)
     rank = 0
     world_size = 1
     config.exp_path = os.path.dirname(args.config)
@@ -88,13 +87,7 @@ def main():
     # create model
     model = ModelHelper(config.net)
     model.cuda()
-    local_rank = 0 # int(os.environ["LOCAL_RANK"])
-    #model = DDP(
-    #    model,
-    #    device_ids=[local_rank],
-    #    output_device=local_rank,
-    #    find_unused_parameters=True,
-    #)
+    local_rank = 0 
 
     layers = []
     for module in config.net:
@@ -105,11 +98,6 @@ def main():
         logger.info("layers: {}".format(layers))
         logger.info("active layers: {}".format(active_layers))
 
-    # parameters needed to be updated
-    # parameters = [
-    #    {"params": getattr(model.module, layer).parameters()} for layer in active_layers
-    # ]build_dataloader(config.dat
-
     optimizer = get_optimizer(model.parameters(), config.trainer.optimizer)
     lr_scheduler = get_scheduler(optimizer, config.trainer.lr_scheduler)
 
@@ -117,7 +105,6 @@ def main():
     best_metric = 0
     last_epoch = 0
 
-    # load model: auto_resume > resume_model > load_path
     auto_resume = config.saver.get("auto_resume", True)
     resume_model = config.saver.get("resume_model", None)
     load_path = config.saver.get("load_path", None)
@@ -143,8 +130,6 @@ def main():
     criterion = build_criterion(config.criterion)
 
     for epoch in range(last_epoch, config.trainer.max_epoch):
-        # train_loader.sampler.set_epoch(epoch)
-        # val_loader.sampler.set_epoch(epoch)
         last_iter = epoch * len(train_loader)
         train_one_epoch(
             train_loader,
@@ -161,7 +146,6 @@ def main():
 
         if (epoch + 1) % config.trainer.val_freq_epoch == 0:
             ret_metrics = validate(val_loader, model)
-            # only ret_metrics on rank0 is not empty
             if rank == 0:
                 ret_key_metric = ret_metrics[key_metric]
                 is_best = ret_key_metric >= best_metric
@@ -197,15 +181,14 @@ def train_one_epoch(
     losses = AverageMeter(config.trainer.print_freq_step)
 
     model.train()
-    # freeze selected layers
     for layer in frozen_layers:
         module = getattr(model, layer)
         module.eval()
         for param in module.parameters():
             param.requires_grad = False
 
-    world_size = 1 # dist.get_world_size()
-    rank = 0 # dist.get_rank()
+    world_size = 1
+    rank = 0
     logger = logging.getLogger("global_logger")
     end = time.time()
 
@@ -213,17 +196,14 @@ def train_one_epoch(
         curr_step = start_iter + i
         current_lr = lr_scheduler.get_lr()[0]
 
-        # measure data loading time
         data_time.update(time.time() - end)
 
-        # forward
         outputs = model(input)
         loss = 0
         for name, criterion_loss in criterion.items():
             weight = criterion_loss.weight
             loss += weight * criterion_loss(outputs)
         reduced_loss = loss.clone()
-        # dist.all_reduce(reduced_loss)
         reduced_loss = reduced_loss / world_size
         losses.update(reduced_loss.item())
 
@@ -235,7 +215,6 @@ def train_one_epoch(
             max_norm = config.trainer.clip_max_norm
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
         optimizer.step()
-        # measure elapsed time
         batch_time.update(time.time() - end)
 
         if (curr_step + 1) % config.trainer.print_freq_step == 0 and rank == 0:
@@ -276,16 +255,12 @@ def validate(val_loader, model):
 
     if rank == 0:
         os.makedirs(config.evaluator.eval_dir, exist_ok=True)
-    # all threads write to config.evaluator.eval_dir, it must be made before every thread begin to write
-    # dist.barrier()
 
     with torch.no_grad():
         for i, input in enumerate(val_loader):
-            # forward
             outputs = model(input)
             dump(config.evaluator.eval_dir, outputs)
 
-            # record loss
             loss = 0
             for name, criterion_loss in criterion.items():
                 weight = criterion_loss.weight
@@ -293,7 +268,6 @@ def validate(val_loader, model):
             num = len(outputs["filename"])
             losses.update(loss.item(), num)
 
-            # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
@@ -304,15 +278,12 @@ def validate(val_loader, model):
                     )
                 )
 
-    # gather final results
-    # dist.barrier()
+
     total_num = torch.Tensor([losses.count]).cuda()
     loss_sum = torch.Tensor([losses.avg * losses.count]).cuda()
-    # dist.all_reduce(total_num, async_op=True)
-    # dist.all_reduce(loss_sum, async_op=True)
     final_loss = loss_sum.item() / total_num.item()
 
-    ret_metrics = {}  # only ret_metrics on rank0 is not empty
+    ret_metrics = {} 
     if rank == 0:
         logger.info("Gathering final results ...")
         # total loss
