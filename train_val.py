@@ -31,15 +31,15 @@ from utils.optimizer_helper import get_optimizer
 from utils.vis_helper import visualize_compound, visualize_single
 
 parser = argparse.ArgumentParser(description="UniAD Framework")
-parser.add_argument("--config", default="./mvtechad_config.yaml")
+parser.add_argument("--config", default="./stitch-o_config.yaml")
 parser.add_argument("-e", "--evaluate", action="store_true")
 parser.add_argument("--local_rank", default=None, help="local rank for dist")
 parser.add_argument('--normal_labels', help='normal_labels',
                         default="0,1,2,3,4", type=str)
 parser.add_argument('--epochs', help='epochs',
-                        default=200, type=int)
+                        default=100, type=int)
 parser.add_argument('--batch_size', help='batch_size',
-                        default=128, type=int)
+                        default=8, type=int)
 parser.add_argument('--model_type', help='backbone of model',
                         default="models.backbones.efficientnet_b4", type=str)
 
