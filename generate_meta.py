@@ -65,15 +65,17 @@ for orchard in os.listdir(root_dir):
                 if os.path.exists(class_dir):
                     all_metadata["test"].extend(process_directory(class_dir, class_name, "test", orchard, mean, std))
 
+output_dir = "chunks/metadata"
+
 # Save the training metadata to a JSON file
-train_output_file = "train_metadata.json"
+train_output_file = os.path.join(output_dir, "train_metadata.json")
 with open(train_output_file, "w") as f:
     for entry in all_metadata["train"]:
         json.dump(entry, f)
         f.write("\n")
 
 # Save the test metadata to a JSON file
-test_output_file = "test_metadata.json"
+test_output_file = os.path.join(output_dir, "test_metadata.json")
 with open(test_output_file, "w") as f:
     for entry in all_metadata["test"]:
         json.dump(entry, f)

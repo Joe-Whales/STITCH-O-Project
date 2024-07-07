@@ -11,14 +11,14 @@ dataset:
       image_dir: ./chunks/
 
   train:
-    meta_file: ./train_metadata.json
+    meta_file: ./chunks/metadata/train_metadata.json
     rebalance: False
     hflip: False
     vflip: False
     rotate: True
 
   test:
-    meta_file: ./test_metadata.json
+    meta_file: ./chunks/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
   batch_size: 8
