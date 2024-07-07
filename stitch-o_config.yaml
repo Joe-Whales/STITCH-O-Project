@@ -15,15 +15,14 @@ dataset:
     rebalance: False
     hflip: False
     vflip: False
-    rotate: False
+    rotate: True
 
   test:
     meta_file: ./test_metadata.json
 
   input_size: [224,224] # [h,w]
-  pixel_mean: [783.658]
-  pixel_std: [328.620]
   batch_size: 8
+  normals: [0]
   workers: 4 # number of workers of dataloader for each process
 
 criterion:
@@ -47,34 +46,27 @@ trainer:
     type: AdamW
     kwargs:
       lr: 0.0001
-      betas: [0.9, 0.999]
+      #betas: [0.9, 0.999]
       weight_decay: 0.0001
 
 saver:
   auto_resume: False
   always_save: False
-  load_path: mvtech_checkpoint/ckpt.pth.tar
-  save_dir: mvtech_checkpoint/
+  load_path: stitch-o_checkpoint/ckpt.pth.tar
+  save_dir: stitch-o_checkpoint/
   log_dir: log/
 
 evaluator:
   save_dir: result_eval_temp
-  key_metric: mean_pixel_auc
+  key_metric: mean_std_auc
   metrics:
     auc:
       - name: std
       - name: max
         kwargs:
           avgpool_size: [16, 16]
-      - name: pixel
-  vis_compound:
-    save_dir: vis_compound
-    max_score: null
-    min_score: null
-  # vis_single:
-  #   save_dir: vis_single
-  #   max_score: null
-  #   min_score: null
+      - name: mean
+
 
 frozen_layers: [backbone]
 
@@ -111,7 +103,6 @@ net:
         neighbor_mask:
           neighbor_size: [7,7]
           mask: [True, True, True] # whether use mask in [enc, dec1, dec2]
-        save_recon:
-          save_dir: result_recon
+        save_recon: False
         initializer:
           method: xavier_uniform
