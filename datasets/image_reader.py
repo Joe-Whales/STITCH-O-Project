@@ -24,9 +24,8 @@ class OpenCVReader:
         return img
 
 class NPYReader:
-    def __init__(self, image_dir, target_size=(224, 224)):
+    def __init__(self, image_dir):
         self.image_dir = image_dir
-        self.target_size = target_size
 
     def __call__(self, filename):
         filename = os.path.join(self.image_dir, filename)
@@ -38,20 +37,6 @@ class NPYReader:
         # Ensure the image has at least 2 dimensions
         if img.ndim == 1:
             img = img.reshape(1, -1)
-        
-        # Resize the image to target size
-        if img.shape[:2] != self.target_size:
-            # If it's a 2D array (grayscale), add a channel dimension
-            if img.ndim == 2:
-                img = img[..., np.newaxis]
-            
-            # Resize each channel separately and stack them back together
-            resized_channels = []
-            for i in range(img.shape[2]):
-                resized_channel = cv2.resize(img[..., i], self.target_size, interpolation=cv2.INTER_LINEAR)
-                resized_channels.append(resized_channel)
-            
-            img = np.stack(resized_channels, axis=-1)
         
         return img
 
