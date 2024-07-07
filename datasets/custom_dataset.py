@@ -3,6 +3,8 @@ from __future__ import division
 import json
 import logging
 
+from torch import from_numpy, clamp
+from torch.nn import Module as nn
 import numpy as np
 import torchvision.transforms as transforms
 from PIL import Image
@@ -13,6 +15,7 @@ from torch.utils.data.sampler import RandomSampler
 from datasets.base_dataset import BaseDataset, TestBaseTransform, TrainBaseTransform
 from datasets.image_reader import build_image_reader
 from datasets.transforms import RandomColorJitter
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger("global_logger")
 
@@ -21,7 +24,6 @@ def build_custom_dataloader(cfg, training, distributed=True):
 
     image_reader = build_image_reader(cfg.image_reader)
 
-    normalize_fn = transforms.Normalize(mean=cfg["pixel_mean"], std=cfg["pixel_std"])
     if training:
         transform_fn = TrainBaseTransform(
             cfg["input_size"], cfg["hflip"], cfg["vflip"], cfg["rotate"]
@@ -40,7 +42,6 @@ def build_custom_dataloader(cfg, training, distributed=True):
         cfg["meta_file"],
         training,
         transform_fn=transform_fn,
-        normalize_fn=normalize_fn,
         colorjitter_fn=colorjitter_fn,
     )
 
@@ -67,14 +68,12 @@ class CustomDataset(BaseDataset):
         meta_file,
         training,
         transform_fn,
-        normalize_fn,
         colorjitter_fn=None,
     ):
         self.image_reader = image_reader
         self.meta_file = meta_file
         self.training = training
         self.transform_fn = transform_fn
-        self.normalize_fn = normalize_fn
         self.colorjitter_fn = colorjitter_fn
 
         # construct metas
@@ -95,6 +94,7 @@ class CustomDataset(BaseDataset):
         filename = meta["filename"]
         label = meta["label"]
         image = self.image_reader(meta["filename"])
+
         input.update(
             {
                 "filename": filename,
@@ -109,7 +109,7 @@ class CustomDataset(BaseDataset):
         else:
             input["clsname"] = filename.split("/")[-4]
 
-        image = Image.fromarray(image, "RGB")
+        image = Image.fromarray(image.squeeze(), mode="RGB")
 
         # read / generate mask
         if meta.get("maskname", None):
@@ -128,9 +128,14 @@ class CustomDataset(BaseDataset):
             image, mask = self.transform_fn(image, mask)
         if self.colorjitter_fn:
             image = self.colorjitter_fn(image)
+            
         image = transforms.ToTensor()(image)
         mask = transforms.ToTensor()(mask)
-        if self.normalize_fn:
-            image = self.normalize_fn(image)
+        
+        if "mean" in meta and "std" in meta:
+            normalize_fn = transforms.Normalize(mean=meta["mean"], std=meta["std"])
+            image = normalize_fn(image)
+            
         input.update({"image": image, "mask": mask})
+
         return input
