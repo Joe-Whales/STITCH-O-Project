@@ -22,3 +22,4 @@ log/*
 data/MVTec-AD/mvtec_anomaly_detection/*
 
 *.npy
+.venv
