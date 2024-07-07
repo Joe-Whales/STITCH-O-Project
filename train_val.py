@@ -35,7 +35,7 @@ parser.add_argument("--config", default="./stitch-o_config.yaml")
 parser.add_argument("-e", "--evaluate", action="store_true")
 parser.add_argument("--local_rank", default=None, help="local rank for dist")
 parser.add_argument('--normal_labels', help='normal_labels',
-                        default="0,1,2,3,4", type=str)
+                        default="0", type=str)
 parser.add_argument('--epochs', help='epochs',
                         default=100, type=int)
 parser.add_argument('--batch_size', help='batch_size',
@@ -53,7 +53,6 @@ def main():
 
     config.port = config.get("port", None)
     rank = 0
-    world_size = 1
     config.exp_path = os.path.dirname(args.config)
     config.save_path = os.path.join(config.exp_path, config.saver.save_dir)
     config.log_path = os.path.join(config.exp_path, config.saver.log_dir)
@@ -142,7 +141,7 @@ def main():
             criterion,
             frozen_layers,
         )
-        lr_scheduler.step(epoch)
+        lr_scheduler.step()
 
         if (epoch + 1) % config.trainer.val_freq_epoch == 0:
             ret_metrics = validate(val_loader, model)
@@ -194,7 +193,7 @@ def train_one_epoch(
 
     for i, input in enumerate(train_loader):
         curr_step = start_iter + i
-        current_lr = lr_scheduler.get_lr()[0]
+        current_lr = lr_scheduler.get_last_lr()[0]
 
         data_time.update(time.time() - end)
 
