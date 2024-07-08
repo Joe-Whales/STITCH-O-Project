@@ -25,3 +25,5 @@ data/MVTec-AD/mvtec_anomaly_detection/*
 .venv
 
 *.pth.tar
+
+chunks/*

@@ -15,8 +15,8 @@ class_labels = {
 # Function to read mean and std values from data_stats folder
 def read_stats(orchard_path):
     stats_path = os.path.join(orchard_path, "data_stats")
-    mean_path = os.path.join(stats_path, "new_mean.npy")
-    std_path = os.path.join(stats_path, "new_std.npy")
+    mean_path = os.path.join(stats_path, "train_means.npy")
+    std_path = os.path.join(stats_path, "train_sdv.npy")
     
     if os.path.exists(mean_path) and os.path.exists(std_path):
         mean = np.load(mean_path).tolist()
@@ -65,17 +65,20 @@ for orchard in os.listdir(root_dir):
                 if os.path.exists(class_dir):
                     all_metadata["test"].extend(process_directory(class_dir, class_name, "test", orchard, mean, std))
 
-output_dir = "chunks/metadata"
+# Create metadata folder if it doesn't exist
+metadata_dir = os.path.join(root_dir, "metadata")
+if not os.path.exists(metadata_dir):
+    os.makedirs(metadata_dir)
 
 # Save the training metadata to a JSON file
-train_output_file = os.path.join(output_dir, "train_metadata.json")
+train_output_file = os.path.join(metadata_dir, "train_metadata.json")
 with open(train_output_file, "w") as f:
     for entry in all_metadata["train"]:
         json.dump(entry, f)
         f.write("\n")
 
 # Save the test metadata to a JSON file
-test_output_file = os.path.join(output_dir, "test_metadata.json")
+test_output_file = os.path.join(metadata_dir, "test_metadata.json")
 with open(test_output_file, "w") as f:
     for entry in all_metadata["test"]:
         json.dump(entry, f)
