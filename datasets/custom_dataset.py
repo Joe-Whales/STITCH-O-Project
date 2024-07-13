@@ -109,7 +109,9 @@ class CustomDataset(BaseDataset):
         else:
             input["clsname"] = filename.split("/")[-4]
 
-        image = Image.fromarray(image.squeeze(), mode="RGB")
+        image = (image).astype(np.uint8)
+
+        image = Image.fromarray(image.squeeze(), mode="L")
 
         # read / generate mask
         if meta.get("maskname", None):
@@ -136,6 +138,10 @@ class CustomDataset(BaseDataset):
             normalize_fn = transforms.Normalize(mean=meta["mean"], std=meta["std"])
             image = normalize_fn(image)
             
+        # duplicate channels of image to 3
+        if image.size(0) == 1:
+            image = image.expand(3, -1, -1)
+        
         input.update({"image": image, "mask": mask})
 
         return input
