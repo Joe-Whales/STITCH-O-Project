@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+import argparse
 
 # Set the root directory where your dataset is located
 root_dir = "chunks"
@@ -9,7 +10,8 @@ root_dir = "chunks"
 class_labels = {
     "normal": 0,
     "case_1": 1,
-    "case_2": 1
+    "case_2": 1,
+    "case_3": 1
 }
 
 # Function to read mean and std values from data_stats folder
@@ -42,6 +44,11 @@ def process_directory(dir_path, class_name, split, orchard_name, mean, std):
             metadata.append(metadata_entry)
     return metadata
 
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Generate metadata for orchard dataset")
+parser.add_argument("--case", choices=["case_1", "case_2", "case_3"], help="Filter test metadata by specific case")
+args = parser.parse_args()
+
 # Process all orchards
 all_metadata = {"train": [], "test": []}
 
@@ -61,6 +68,8 @@ for orchard in os.listdir(root_dir):
         test_dir = os.path.join(orchard_path, "test")
         if os.path.exists(test_dir):
             for class_name in class_labels.keys():
+                if args.case and class_name != "normal" and class_name != args.case:
+                    continue
                 class_dir = os.path.join(test_dir, class_name)
                 if os.path.exists(class_dir):
                     all_metadata["test"].extend(process_directory(class_dir, class_name, "test", orchard, mean, std))
