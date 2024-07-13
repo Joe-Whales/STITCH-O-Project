@@ -26,11 +26,8 @@ def create_logger(name, log_file, level=logging.INFO):
     )
     fh = logging.FileHandler(log_file)
     fh.setFormatter(formatter)
-    sh = logging.StreamHandler()
-    sh.setFormatter(formatter)
     log.setLevel(level)
     log.addHandler(fh)
-    log.addHandler(sh)
     return log
 
 
