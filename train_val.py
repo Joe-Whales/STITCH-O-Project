@@ -4,45 +4,23 @@ import os
 import pprint
 import shutil
 import time
-
+from tqdm import tqdm
 import torch
-import torch.distributed as dist
 import torch.optim
 import yaml
 from datasets.data_builder import build_dataloader
 from easydict import EasyDict
 from models.model_helper import ModelHelper
 from tensorboardX import SummaryWriter
-from torch.nn.parallel import DistributedDataParallel as DDP
 from utils.criterion_helper import build_criterion
-from utils.dist_helper import setup_distributed
 from utils.eval_helper import dump, log_metrics, merge_together, performances
 from utils.lr_helper import get_scheduler
-from utils.misc_helper import (
-    AverageMeter,
-    create_logger,
-    get_current_time,
-    load_state,
-    save_checkpoint,
-    set_random_seed,
-    update_config,
-)
+from utils.misc_helper import AverageMeter, create_logger, get_current_time, load_state, save_checkpoint, set_random_seed, update_config
 from utils.optimizer_helper import get_optimizer
-from utils.vis_helper import visualize_compound, visualize_single
 
 parser = argparse.ArgumentParser(description="UniAD Framework")
 parser.add_argument("--config", default="./stitch-o_config.yaml")
 parser.add_argument("-e", "--evaluate", action="store_true")
-parser.add_argument("--local_rank", default=None, help="local rank for dist")
-parser.add_argument('--normal_labels', help='normal_labels',
-                        default="0", type=str)
-parser.add_argument('--epochs', help='epochs',
-                        default=100, type=int)
-parser.add_argument('--batch_size', help='batch_size',
-                        default=8, type=int)
-parser.add_argument('--model_type', help='backbone of model',
-                        default="models.backbones.efficientnet_b4", type=str)
-
 
 def main():
     global args, config, key_metric, best_metric
@@ -57,11 +35,6 @@ def main():
     config.save_path = os.path.join(config.exp_path, config.saver.save_dir)
     config.log_path = os.path.join(config.exp_path, config.saver.log_dir)
     config.evaluator.eval_dir = os.path.join(config.exp_path, config.evaluator.save_dir)
-    normal_sets = [int(num) for num in args.normal_labels.split(',')]
-    config.dataset.normals = normal_sets
-    config.net[0].type = args.model_type
-    config.trainer.max_epoch   = args.epochs
-    config.dataset.batch_size = args.batch_size
     config = update_config(config)
 
     if rank == 0:
@@ -86,7 +59,6 @@ def main():
     # create model
     model = ModelHelper(config.net)
     model.cuda()
-    local_rank = 0 
 
     layers = []
     for module in config.net:
@@ -191,7 +163,7 @@ def train_one_epoch(
     logger = logging.getLogger("global_logger")
     end = time.time()
 
-    for i, input in enumerate(train_loader):
+    for i, input in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}/{config.trainer.max_epoch}", ncols=100)):
         curr_step = start_iter + i
         current_lr = lr_scheduler.get_last_lr()[0]
 
