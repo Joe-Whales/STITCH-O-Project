@@ -56,6 +56,7 @@ def build_custom_dataloader(cfg, training, distributed=True):
         num_workers=cfg["workers"],
         pin_memory=True,
         sampler=sampler,
+        prefetch_factor=2,
     )
 
     return data_loader

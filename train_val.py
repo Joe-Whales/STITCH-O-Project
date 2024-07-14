@@ -7,6 +7,7 @@ import time
 from tqdm import tqdm
 import torch
 import torch.optim
+from torch.cuda.amp import autocast, GradScaler
 import yaml
 from datasets.data_builder import build_dataloader
 from easydict import EasyDict
@@ -17,6 +18,7 @@ from utils.eval_helper import dump, log_metrics, merge_together, performances
 from utils.lr_helper import get_scheduler
 from utils.misc_helper import AverageMeter, create_logger, get_current_time, load_state, save_checkpoint, set_random_seed, update_config
 from utils.optimizer_helper import get_optimizer
+
 
 parser = argparse.ArgumentParser(description="UniAD Framework")
 parser.add_argument("--config", default="./stitch-o_config.yaml")
@@ -71,6 +73,7 @@ def main():
 
     optimizer = get_optimizer(model.parameters(), config.trainer.optimizer)
     lr_scheduler = get_scheduler(optimizer, config.trainer.lr_scheduler)
+    scaler = GradScaler()
 
     key_metric = config.evaluator["key_metric"]
     best_metric = 0
@@ -96,6 +99,7 @@ def main():
 
     if args.evaluate:
         validate(val_loader, model)
+        tb_logger.close()
         return
 
     criterion = build_criterion(config.criterion)
@@ -112,6 +116,7 @@ def main():
             tb_logger,
             criterion,
             frozen_layers,
+            scaler=scaler,
         )
         lr_scheduler.step()
 
@@ -145,6 +150,7 @@ def train_one_epoch(
     tb_logger,
     criterion,
     frozen_layers,
+    scaler=None,
 ):
 
     batch_time = AverageMeter(config.trainer.print_freq_step)
@@ -162,6 +168,9 @@ def train_one_epoch(
     rank = 0
     logger = logging.getLogger("global_logger")
     end = time.time()
+    
+    if scaler is None:
+        scaler = GradScaler()
 
     for i, input in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}/{config.trainer.max_epoch}", ncols=100)):
         curr_step = start_iter + i
@@ -169,23 +178,29 @@ def train_one_epoch(
 
         data_time.update(time.time() - end)
 
-        outputs = model(input)
-        loss = 0
-        for name, criterion_loss in criterion.items():
-            weight = criterion_loss.weight
-            loss += weight * criterion_loss(outputs)
+        with autocast():
+            outputs = model(input)
+            loss = 0
+            for name, criterion_loss in criterion.items():
+                weight = criterion_loss.weight
+                loss += weight * criterion_loss(outputs)
+                
         reduced_loss = loss.clone()
         reduced_loss = reduced_loss / world_size
         losses.update(reduced_loss.item())
 
         # backward
         optimizer.zero_grad()
-        loss.backward()
+        scaler.scale(loss).backward()
+        
         # update
         if config.trainer.get("clip_max_norm", None):
             max_norm = config.trainer.clip_max_norm
+            scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
-        optimizer.step()
+            
+        scaler.step(optimizer)
+        scaler.update()
         batch_time.update(time.time() - end)
 
         if (curr_step + 1) % config.trainer.print_freq_step == 0 and rank == 0:

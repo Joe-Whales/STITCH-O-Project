@@ -14,14 +14,14 @@ dataset:
     meta_file: ./chunks/metadata/train_metadata.json
     rebalance: False
     hflip: False
-    vflip: True
+    vflip: False
     rotate: True
 
   test:
     meta_file: ./chunks/metadata/test_metadata.json
 
   input_size: [176,176] # [h,w]
-  batch_size: 8
+  batch_size: 64
   normals: [0]
   workers: 8 # number of workers of dataloader for each process
 
