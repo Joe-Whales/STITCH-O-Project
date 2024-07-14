@@ -135,9 +135,9 @@ class CustomDataset(BaseDataset):
         image = transforms.ToTensor()(image)
         mask = transforms.ToTensor()(mask)
         
-        if "mean" in meta and "std" in meta:
-            normalize_fn = transforms.Normalize(mean=meta["mean"], std=meta["std"])
-            image = normalize_fn(image)
+        # if "mean" in meta and "std" in meta:
+        #     normalize_fn = transforms.Normalize(mean=meta["mean"], std=meta["std"])
+        #     image = normalize_fn(image)
             
         # duplicate channels of image to 3
         if image.size(0) == 1:
