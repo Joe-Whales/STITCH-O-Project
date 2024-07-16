@@ -1,31 +1,33 @@
-*/__pycache__/*
-*pyc
+# Python cache files
+__pycache__/
+*.pyc
+
+# VS Code settings
 .vscode/
 
-experiments/*/*/checkpoints*/*
-experiments/*/*/log*/*
-experiments/*/*/arun_log*/*
-experiments/*/*/*result*/*
-experiments/*/*/*vis*/*
+# Experiments output
+experiments/**/checkpoints*/
+experiments/**/log*/
+experiments/**/arun_log*/
+experiments/**/*result*/
+experiments/**/*vis*/
 
-experiments/*/checkpoints*/*
-experiments/*/log*/*
-experiments/*/arun_log*/*
-experiments/*/*result*/*
-experiments/*/*vis*/*
-
-result_recon/*
-
-UniAD/mvtech_checkpoint/*
-UniAD/log/*
+# Other results and logs
+result_recon/
+UniAD/log/
 *.log
 
-data/MVTec-AD/mvtec_anomaly_detection/*
-
+# Data files
+data/MVTec-AD/mvtec_anomaly_detection/
 *.npy
-.venv
+*.tif
+*.json
 
+# Virtual environment
+.venv/
+
+# Model checkpoints
 *.pth.tar
 
-chunks/*
-*.tif
+# Chunks directory
+chunks/
