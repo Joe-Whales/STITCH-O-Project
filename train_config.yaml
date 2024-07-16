@@ -37,7 +37,7 @@ trainer:
   clip_max_norm: 0.1
   val_freq_epoch: 10
   print_freq_step: 200
-  tb_freq_step: 1
+  tb_freq_step: 500
   lr_scheduler:
     type: StepLR
     kwargs:

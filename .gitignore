@@ -16,8 +16,9 @@ experiments/*/*vis*/*
 
 result_recon/*
 
-mvtech_checkpoint/*
-log/*
+UniAD/mvtech_checkpoint/*
+UniAD/log/*
+*.log
 
 data/MVTec-AD/mvtec_anomaly_detection/*
 

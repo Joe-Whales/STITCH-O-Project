@@ -173,7 +173,7 @@ def train_one_epoch(
     if scaler is None:
         scaler = GradScaler()
 
-    for i, input in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}/{config.trainer.max_epoch}, loss: {losses.avg}", ncols=100)):
+    for i, input in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}/{config.trainer.max_epoch}", ncols=100)):
         curr_step = start_iter + i
         current_lr = lr_scheduler.get_last_lr()[0]
 
@@ -235,6 +235,7 @@ def train_one_epoch(
             )
 
         end = time.time()
+    print(f"Loss: {losses.avg} at epoch {epoch+1}")
 
 
 def validate(val_loader, model):
