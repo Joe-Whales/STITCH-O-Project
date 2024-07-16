@@ -57,6 +57,7 @@ def build_custom_dataloader(cfg, training, distributed=True):
         pin_memory=True,
         sampler=sampler,
         prefetch_factor=2,
+        persistent_workers=True,
     )
 
     return data_loader
