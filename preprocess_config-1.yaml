@@ -1,0 +1,14 @@
+path: .\Preprocessing\data\UOG_1676
+output_path: chunks/UOG_1676/
+files:
+  -
+    name: orthos/raster.tif
+    dimensions: 1
+
+mask: .\Preprocessing\data\UOG_1676\mask_1676.tif
+reference: .\Preprocessing\data\UOG_1676\orthos\raster.tif
+chunk_size: 120
+chunk_overlap: 20
+anomaly_threshold: 0.8
+normal_threshold: 0.0
+scale_ratio: 0.6

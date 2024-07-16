@@ -1,0 +1,211 @@
+[2024-07-15 19:45:29,120][   train_val.py][line:  57][    INFO] args: Namespace(config='./stitch-o_config.yaml', evaluate=False)
+[2024-07-15 19:45:29,122][   train_val.py][line:  58][    INFO] config: {'criterion': [{'kwargs': {'weight': 1.0},
+                'name': 'FeatureMSELoss',
+                'type': 'FeatureMSELoss'}],
+ 'dataset': {'batch_size': 64,
+             'image_reader': {'kwargs': {'image_dir': './chunks/'},
+                              'type': 'npy'},
+             'input_size': [176, 176],
+             'normals': [0],
+             'test': {'meta_file': './chunks/metadata/test_metadata.json'},
+             'train': {'hflip': False,
+                       'meta_file': './chunks/metadata/train_metadata.json',
+                       'rebalance': False,
+                       'rotate': True,
+                       'vflip': False},
+             'type': 'custom',
+             'workers': 8},
+ 'evaluator': {'eval_dir': '.\\result_eval_temp',
+               'key_metric': 'mean_std_auc',
+               'metrics': {'auc': [{'name': 'std'},
+                                   {'kwargs': {'avgpool_size': [16, 16]},
+                                    'name': 'max'},
+                                   {'name': 'mean'}]},
+               'save_dir': 'result_eval_temp'},
+ 'exp_path': '.',
+ 'frozen_layers': ['backbone'],
+ 'log_path': '.\\log/',
+ 'net': [{'frozen': True,
+          'kwargs': {'outblocks': [1, 5, 9, 21],
+                     'outstrides': [2, 4, 8, 16],
+                     'pretrained': True},
+          'name': 'backbone',
+          'type': 'models.backbones.efficientnet_b4'},
+         {'kwargs': {'outplanes': [272], 'outstrides': [16]},
+          'name': 'neck',
+          'prev': 'backbone',
+          'type': 'models.necks.MFCN'},
+         {'kwargs': {'activation': 'relu',
+                     'dim_feedforward': 1024,
+                     'dropout': 0.1,
+                     'feature_jitter': {'prob': 1.0, 'scale': 20.0},
+                     'feature_size': [11, 11],
+                     'hidden_dim': 256,
+                     'initializer': {'method': 'xavier_uniform'},
+                     'neighbor_mask': {'mask': [True, True, True],
+                                       'neighbor_size': [7, 7]},
+                     'nhead': 8,
+                     'normalize_before': False,
+                     'num_decoder_layers': 4,
+                     'num_encoder_layers': 4,
+                     'pos_embed_type': 'learned',
+                     'save_recon': False},
+          'name': 'reconstruction',
+          'prev': 'neck',
+          'type': 'models.reconstructions.UniAD'}],
+ 'port': 11111,
+ 'random_seed': 133,
+ 'save_path': '.\\stitch-o_checkpoint/',
+ 'saver': {'always_save': False,
+           'auto_resume': False,
+           'load_path': 'stitch-o_checkpoint/ckpt.pth.tar',
+           'log_dir': 'log/',
+           'save_dir': 'stitch-o_checkpoint/'},
+ 'trainer': {'clip_max_norm': 0.1,
+             'lr_scheduler': {'kwargs': {'gamma': 0.1, 'step_size': 50},
+                              'type': 'StepLR'},
+             'max_epoch': 250,
+             'optimizer': {'kwargs': {'betas': [0.9, 0.999],
+                                      'lr': 0.0001,
+                                      'weight_decay': 0.0001},
+                           'type': 'AdamW'},
+             'print_freq_step': 200,
+             'tb_freq_step': 1,
+             'val_freq_epoch': 10},
+ 'version': 'v1.0.0'}
+[2024-07-15 19:45:29,389][       utils.py][line: 740][    INFO]  not exist, load from https://github.com/lukemelas/EfficientNet-PyTorch/releases/download/1.0/efficientnet-b4-6ed6700e.pth
+[2024-07-15 19:45:29,463][       utils.py][line: 761][    INFO] Loaded ImageNet pretrained efficientnet-b4
+[2024-07-15 19:45:29,665][   train_val.py][line:  77][    INFO] layers: ['backbone', 'neck', 'reconstruction']
+[2024-07-15 19:45:29,667][   train_val.py][line:  78][    INFO] active layers: ['reconstruction', 'neck']
+[2024-07-15 19:45:29,669][custom_dataset.py][line:  38][    INFO] building CustomDataset from: ./chunks/metadata/train_metadata.json
+[2024-07-15 19:45:29,843][custom_dataset.py][line:  38][    INFO] building CustomDataset from: ./chunks/metadata/test_metadata.json
+[2024-07-15 19:46:01,273][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 0
+[2024-07-15 19:46:01,432][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 1
+[2024-07-15 19:46:01,585][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2
+[2024-07-15 19:46:01,726][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3
+[2024-07-15 19:46:01,874][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4
+[2024-07-15 19:46:02,021][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5
+[2024-07-15 19:46:02,171][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 6
+[2024-07-15 19:46:02,320][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 7
+[2024-07-15 19:46:02,468][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 8
+[2024-07-15 19:46:02,617][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 9
+[2024-07-15 19:46:02,764][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 10
+[2024-07-15 19:46:02,913][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 11
+[2024-07-15 19:46:03,060][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 12
+[2024-07-15 19:46:03,208][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 13
+[2024-07-15 19:46:03,364][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 14
+[2024-07-15 19:46:03,512][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 15
+[2024-07-15 19:46:03,661][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 16
+[2024-07-15 19:46:03,810][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 17
+[2024-07-15 19:46:03,956][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 18
+[2024-07-15 19:46:04,104][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 19
+[2024-07-15 19:46:04,252][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 20
+[2024-07-15 19:46:04,402][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 21
+[2024-07-15 19:46:04,544][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 22
+[2024-07-15 19:46:04,699][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 23
+[2024-07-15 19:46:04,848][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 24
+[2024-07-15 19:46:04,989][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 25
+[2024-07-15 19:46:05,137][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 26
+[2024-07-15 19:46:05,288][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 27
+[2024-07-15 19:46:05,430][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 28
+[2024-07-15 19:46:05,579][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 29
+[2024-07-15 19:46:05,728][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 30
+[2024-07-15 19:46:05,873][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 31
+[2024-07-15 19:46:06,036][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 32
+[2024-07-15 19:46:06,207][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 33
+[2024-07-15 19:46:06,368][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 34
+[2024-07-15 19:46:06,518][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 35
+[2024-07-15 19:46:06,668][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 36
+[2024-07-15 19:46:06,817][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 37
+[2024-07-15 19:46:06,965][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 38
+[2024-07-15 19:46:07,105][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 39
+[2024-07-15 19:46:07,252][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 40
+[2024-07-15 19:46:07,402][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 41
+[2024-07-15 19:46:07,544][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 42
+[2024-07-15 19:46:07,692][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 43
+[2024-07-15 19:46:07,840][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 44
+[2024-07-15 19:46:07,979][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 45
+[2024-07-15 19:46:08,126][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 46
+[2024-07-15 19:46:08,277][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 47
+[2024-07-15 19:46:08,416][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 48
+[2024-07-15 19:46:08,563][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 49
+[2024-07-15 19:46:08,713][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 50
+[2024-07-15 19:46:08,852][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 51
+[2024-07-15 19:46:09,001][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 52
+[2024-07-15 19:46:09,150][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 53
+[2024-07-15 19:46:09,289][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 54
+[2024-07-15 19:46:09,436][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 55
+[2024-07-15 19:46:09,586][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 56
+[2024-07-15 19:46:09,726][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 57
+[2024-07-15 19:46:09,873][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 58
+[2024-07-15 19:46:10,022][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 59
+[2024-07-15 19:46:10,161][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 60
+[2024-07-15 19:46:10,309][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 61
+[2024-07-15 19:46:10,458][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 62
+[2024-07-15 19:46:10,598][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 63
+[2024-07-15 19:46:10,745][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 64
+[2024-07-15 19:46:10,896][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 65
+[2024-07-15 19:46:11,048][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 66
+[2024-07-15 19:46:11,208][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 67
+[2024-07-15 19:46:11,368][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 68
+[2024-07-15 19:46:11,526][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 69
+[2024-07-15 19:46:11,684][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 70
+[2024-07-15 19:46:11,826][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 71
+[2024-07-15 19:46:11,973][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 72
+[2024-07-15 19:46:12,121][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 73
+[2024-07-15 19:46:12,268][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 74
+[2024-07-15 19:46:12,418][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 75
+[2024-07-15 19:46:12,566][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 76
+[2024-07-15 19:46:12,709][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 77
+[2024-07-15 19:46:12,856][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 78
+[2024-07-15 19:46:13,006][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 79
+[2024-07-15 19:46:13,156][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 80
+[2024-07-15 19:46:13,297][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 81
+[2024-07-15 19:46:13,447][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 82
+[2024-07-15 19:46:13,599][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 83
+[2024-07-15 19:46:13,739][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 84
+[2024-07-15 19:46:13,886][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 85
+[2024-07-15 19:46:14,035][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 86
+[2024-07-15 19:46:14,186][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 87
+[2024-07-15 19:46:14,335][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 88
+[2024-07-15 19:46:14,475][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 89
+[2024-07-15 19:46:14,625][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 90
+[2024-07-15 19:46:14,780][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 91
+[2024-07-15 19:46:14,926][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 92
+[2024-07-15 19:46:15,088][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 93
+[2024-07-15 19:46:15,249][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 94
+[2024-07-15 19:46:15,411][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 95
+[2024-07-15 19:46:15,568][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 96
+[2024-07-15 19:46:15,727][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 97
+[2024-07-15 19:46:15,867][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 98
+[2024-07-15 19:46:16,014][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 99
+[2024-07-15 19:46:16,168][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 100
+[2024-07-15 19:46:16,321][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 101
+[2024-07-15 19:46:16,465][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 102
+[2024-07-15 19:46:16,619][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 103
+[2024-07-15 19:46:16,765][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 104
+[2024-07-15 19:46:16,916][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 105
+[2024-07-15 19:46:17,054][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 106
+[2024-07-15 19:46:17,204][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 107
+[2024-07-15 19:46:17,359][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 108
+[2024-07-15 19:46:17,499][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 109
+[2024-07-15 19:46:17,646][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 110
+[2024-07-15 19:46:17,805][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 111
+[2024-07-15 19:46:17,951][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 112
+[2024-07-15 19:46:18,109][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 113
+[2024-07-15 19:46:18,255][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 114
+[2024-07-15 19:46:18,413][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 115
+[2024-07-15 19:46:18,566][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 116
+[2024-07-15 19:46:18,706][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 117
+[2024-07-15 19:46:18,853][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 118
+[2024-07-15 19:46:19,002][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 119
+[2024-07-15 19:46:19,150][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 120
+[2024-07-15 19:46:19,298][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 121
+[2024-07-15 19:46:19,452][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 122
+[2024-07-15 19:46:19,604][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 123
+[2024-07-15 19:46:19,753][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 124
+[2024-07-15 19:46:19,894][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 125
+[2024-07-15 19:46:20,045][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 126
+[2024-07-15 19:46:20,194][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 127
+[2024-07-15 19:46:20,345][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 128
+[2024-07-15 19:46:20,489][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 129

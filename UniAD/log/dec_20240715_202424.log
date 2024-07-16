@@ -1,0 +1,179 @@
+[2024-07-15 20:24:24,209][   train_val.py][line:  57][    INFO] args: Namespace(config='./stitch-o_config.yaml', evaluate=False)
+[2024-07-15 20:24:24,210][   train_val.py][line:  58][    INFO] config: {'criterion': [{'kwargs': {'weight': 1.0},
+                'name': 'FeatureMSELoss',
+                'type': 'FeatureMSELoss'}],
+ 'dataset': {'batch_size': 64,
+             'image_reader': {'kwargs': {'image_dir': './chunks/'},
+                              'type': 'npy'},
+             'input_size': [176, 176],
+             'normals': [0],
+             'test': {'meta_file': './chunks/metadata/test_metadata.json'},
+             'train': {'hflip': False,
+                       'meta_file': './chunks/metadata/train_metadata.json',
+                       'rebalance': False,
+                       'rotate': True,
+                       'vflip': False},
+             'type': 'custom',
+             'workers': 8},
+ 'evaluator': {'eval_dir': '.\\result_eval_temp',
+               'key_metric': 'mean_std_auc',
+               'metrics': {'auc': [{'name': 'std'},
+                                   {'kwargs': {'avgpool_size': [16, 16]},
+                                    'name': 'max'},
+                                   {'name': 'mean'}]},
+               'save_dir': 'result_eval_temp'},
+ 'exp_path': '.',
+ 'frozen_layers': ['backbone'],
+ 'log_path': '.\\log/',
+ 'net': [{'frozen': True,
+          'kwargs': {'outblocks': [1, 5, 9, 21],
+                     'outstrides': [2, 4, 8, 16],
+                     'pretrained': True},
+          'name': 'backbone',
+          'type': 'models.backbones.efficientnet_b4'},
+         {'kwargs': {'outplanes': [272], 'outstrides': [16]},
+          'name': 'neck',
+          'prev': 'backbone',
+          'type': 'models.necks.MFCN'},
+         {'kwargs': {'activation': 'relu',
+                     'dim_feedforward': 1024,
+                     'dropout': 0.1,
+                     'feature_jitter': {'prob': 1.0, 'scale': 20.0},
+                     'feature_size': [11, 11],
+                     'hidden_dim': 256,
+                     'initializer': {'method': 'xavier_uniform'},
+                     'neighbor_mask': {'mask': [True, True, True],
+                                       'neighbor_size': [7, 7]},
+                     'nhead': 8,
+                     'normalize_before': False,
+                     'num_decoder_layers': 4,
+                     'num_encoder_layers': 4,
+                     'pos_embed_type': 'learned',
+                     'save_recon': False},
+          'name': 'reconstruction',
+          'prev': 'neck',
+          'type': 'models.reconstructions.UniAD'}],
+ 'port': 11111,
+ 'random_seed': 133,
+ 'save_path': '.\\stitch-o_checkpoint/',
+ 'saver': {'always_save': False,
+           'auto_resume': False,
+           'load_path': 'stitch-o_checkpoint/ckpt.pth.tar',
+           'log_dir': 'log/',
+           'save_dir': 'stitch-o_checkpoint/'},
+ 'trainer': {'clip_max_norm': 0.1,
+             'lr_scheduler': {'kwargs': {'gamma': 0.1, 'step_size': 50},
+                              'type': 'StepLR'},
+             'max_epoch': 250,
+             'optimizer': {'kwargs': {'betas': [0.9, 0.999],
+                                      'lr': 0.0001,
+                                      'weight_decay': 0.0001},
+                           'type': 'AdamW'},
+             'print_freq_step': 200,
+             'tb_freq_step': 1,
+             'val_freq_epoch': 10},
+ 'version': 'v1.0.0'}
+[2024-07-15 20:24:24,470][       utils.py][line: 740][    INFO]  not exist, load from https://github.com/lukemelas/EfficientNet-PyTorch/releases/download/1.0/efficientnet-b4-6ed6700e.pth
+[2024-07-15 20:24:24,539][       utils.py][line: 761][    INFO] Loaded ImageNet pretrained efficientnet-b4
+[2024-07-15 20:24:24,739][   train_val.py][line:  77][    INFO] layers: ['backbone', 'neck', 'reconstruction']
+[2024-07-15 20:24:24,740][   train_val.py][line:  78][    INFO] active layers: ['neck', 'reconstruction']
+[2024-07-15 20:24:24,742][custom_dataset.py][line:  38][    INFO] building CustomDataset from: ./chunks/metadata/train_metadata.json
+[2024-07-15 20:24:24,911][custom_dataset.py][line:  38][    INFO] building CustomDataset from: ./chunks/metadata/test_metadata.json
+[2024-07-15 20:25:02,753][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 35
+[2024-07-15 20:25:35,349][   train_val.py][line: 235][    INFO] Epoch: [1/250]	Iter: [200/69500]	Time 0.20 (0.35)	Data 0.00 (0.14)	Loss 28.06238 (31.65991)	LR 0.00010	
+[2024-07-15 20:26:44,968][   train_val.py][line: 235][    INFO] Epoch: [2/250]	Iter: [400/69500]	Time 0.19 (0.43)	Data 0.00 (0.23)	Loss 28.99399 (27.22413)	LR 0.00010	
+[2024-07-15 20:27:15,486][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 554
+[2024-07-15 20:27:55,097][   train_val.py][line: 235][    INFO] Epoch: [3/250]	Iter: [600/69500]	Time 0.20 (0.88)	Data 0.00 (0.67)	Loss 24.38051 (26.03169)	LR 0.00010	
+[2024-07-15 20:27:58,805][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 618
+[2024-07-15 20:28:34,394][   train_val.py][line: 235][    INFO] Epoch: [3/250]	Iter: [800/69500]	Time 0.19 (0.20)	Data 0.00 (0.00)	Loss 29.13529 (25.46186)	LR 0.00010	
+[2024-07-15 20:29:26,987][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 917
+[2024-07-15 20:29:43,014][   train_val.py][line: 235][    INFO] Epoch: [4/250]	Iter: [1000/69500]	Time 0.19 (0.37)	Data 0.00 (0.17)	Loss 22.04126 (24.64725)	LR 0.00010	
+[2024-07-15 20:30:51,167][   train_val.py][line: 235][    INFO] Epoch: [5/250]	Iter: [1200/69500]	Time 0.20 (0.52)	Data 0.00 (0.32)	Loss 23.07760 (23.89757)	LR 0.00010	
+[2024-07-15 20:31:59,080][   train_val.py][line: 235][    INFO] Epoch: [6/250]	Iter: [1400/69500]	Time 0.19 (3.00)	Data 0.00 (2.78)	Loss 21.43256 (23.97887)	LR 0.00010	
+[2024-07-15 20:32:25,623][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 1535
+[2024-07-15 20:32:38,160][   train_val.py][line: 235][    INFO] Epoch: [6/250]	Iter: [1600/69500]	Time 0.19 (0.20)	Data 0.00 (0.00)	Loss 21.51614 (23.25442)	LR 0.00010	
+[2024-07-15 20:33:46,120][   train_val.py][line: 235][    INFO] Epoch: [7/250]	Iter: [1800/69500]	Time 0.19 (0.41)	Data 0.00 (0.21)	Loss 21.99262 (22.43567)	LR 0.00010	
+[2024-07-15 20:34:04,063][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 1891
+[2024-07-15 20:34:54,045][   train_val.py][line: 235][    INFO] Epoch: [8/250]	Iter: [2000/69500]	Time 0.20 (0.72)	Data 0.00 (0.51)	Loss 21.71253 (22.82182)	LR 0.00010	
+[2024-07-15 20:35:07,879][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2070
+[2024-07-15 20:35:11,343][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2088
+[2024-07-15 20:35:33,201][   train_val.py][line: 235][    INFO] Epoch: [8/250]	Iter: [2200/69500]	Time 0.20 (0.20)	Data 0.00 (0.00)	Loss 19.95520 (21.89201)	LR 0.00010	
+[2024-07-15 20:36:07,572][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2228
+[2024-07-15 20:36:10,441][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2243
+[2024-07-15 20:36:39,513][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2392
+[2024-07-15 20:36:40,873][   train_val.py][line: 235][    INFO] Epoch: [9/250]	Iter: [2400/69500]	Time 0.20 (0.36)	Data 0.00 (0.16)	Loss 18.94976 (21.29615)	LR 0.00010	
+[2024-07-15 20:37:39,549][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2553
+[2024-07-15 20:37:48,539][   train_val.py][line: 235][    INFO] Epoch: [10/250]	Iter: [2600/69500]	Time 0.20 (0.48)	Data 0.00 (0.28)	Loss 20.26811 (21.37244)	LR 0.00010	
+[2024-07-15 20:38:21,777][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2769
+[2024-07-15 20:39:03,476][   train_val.py][line: 298][    INFO] Gathering final results ...
+[2024-07-15 20:39:03,476][   train_val.py][line: 300][    INFO]  * Loss 25.78265	total_num=2039.0
+[2024-07-15 20:39:21,489][ eval_helper.py][line: 224][    INFO] 
+|  clsname  |   max    |   mean   |   std    |
+|:---------:|:--------:|:--------:|:--------:|
+| UOG_1676  | 0.859822 | 0.950794 | 0.50963  |
+| UOG_1996  | 0.66941  | 0.517572 | 0.705876 |
+| UOG_2057  | 0.718196 | 0.646506 | 0.704134 |
+|   mean    | 0.749143 | 0.704957 | 0.63988  |
+[2024-07-15 20:39:21,511][   train_val.py][line: 135][    INFO] best_metric = 0.6398803571710651
+[2024-07-15 20:39:53,482][   train_val.py][line: 235][    INFO] Epoch: [11/250]	Iter: [2800/69500]	Time 0.19 (1.58)	Data 0.00 (1.37)	Loss 19.66932 (20.30428)	LR 0.00010	
+[2024-07-15 20:39:59,144][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2828
+[2024-07-15 20:40:29,452][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 2983
+[2024-07-15 20:40:32,580][   train_val.py][line: 235][    INFO] Epoch: [11/250]	Iter: [3000/69500]	Time 0.20 (0.20)	Data 0.00 (0.00)	Loss 18.91334 (20.84955)	LR 0.00010	
+[2024-07-15 20:40:34,488][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3009
+[2024-07-15 20:41:40,618][   train_val.py][line: 235][    INFO] Epoch: [12/250]	Iter: [3200/69500]	Time 0.19 (0.39)	Data 0.00 (0.20)	Loss 19.44564 (20.33689)	LR 0.00010	
+[2024-07-15 20:41:48,293][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3238
+[2024-07-15 20:41:53,144][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3263
+[2024-07-15 20:42:48,374][   train_val.py][line: 235][    INFO] Epoch: [13/250]	Iter: [3400/69500]	Time 0.19 (0.63)	Data 0.00 (0.43)	Loss 19.42930 (20.12704)	LR 0.00010	
+[2024-07-15 20:42:55,348][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3435
+[2024-07-15 20:43:04,646][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3483
+[2024-07-15 20:43:23,886][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3582
+[2024-07-15 20:43:27,205][   train_val.py][line: 235][    INFO] Epoch: [13/250]	Iter: [3600/69500]	Time 0.19 (0.20)	Data 0.00 (0.00)	Loss 18.25177 (19.77735)	LR 0.00010	
+[2024-07-15 20:44:05,881][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3650
+[2024-07-15 20:44:29,417][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3771
+[2024-07-15 20:44:30,339][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3776
+[2024-07-15 20:44:34,834][   train_val.py][line: 235][    INFO] Epoch: [14/250]	Iter: [3800/69500]	Time 0.20 (0.35)	Data 0.00 (0.15)	Loss 17.99375 (19.48360)	LR 0.00010	
+[2024-07-15 20:44:44,555][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3849
+[2024-07-15 20:45:27,286][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3921
+[2024-07-15 20:45:37,954][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 3976
+[2024-07-15 20:45:42,426][   train_val.py][line: 235][    INFO] Epoch: [15/250]	Iter: [4000/69500]	Time 0.19 (0.46)	Data 0.00 (0.26)	Loss 17.62816 (19.45343)	LR 0.00010	
+[2024-07-15 20:45:45,496][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4015
+[2024-07-15 20:46:00,652][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4093
+[2024-07-15 20:46:10,551][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4144
+[2024-07-15 20:46:49,886][   train_val.py][line: 235][    INFO] Epoch: [16/250]	Iter: [4200/69500]	Time 0.20 (1.12)	Data 0.00 (0.92)	Loss 19.25188 (19.67671)	LR 0.00010	
+[2024-07-15 20:46:57,444][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4238
+[2024-07-15 20:47:01,089][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4257
+[2024-07-15 20:47:03,380][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4269
+[2024-07-15 20:47:14,999][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4329
+[2024-07-15 20:47:27,023][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4391
+[2024-07-15 20:47:28,569][   train_val.py][line: 235][    INFO] Epoch: [16/250]	Iter: [4400/69500]	Time 0.19 (0.20)	Data 0.00 (0.00)	Loss 17.62561 (19.25615)	LR 0.00010	
+[2024-07-15 20:48:12,817][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4479
+[2024-07-15 20:48:25,991][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4547
+[2024-07-15 20:48:32,763][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4582
+[2024-07-15 20:48:36,073][   train_val.py][line: 235][    INFO] Epoch: [17/250]	Iter: [4600/69500]	Time 0.19 (0.39)	Data 0.00 (0.18)	Loss 16.86386 (19.36679)	LR 0.00010	
+[2024-07-15 20:48:48,327][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4662
+[2024-07-15 20:49:40,830][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4785
+[2024-07-15 20:49:43,555][   train_val.py][line: 235][    INFO] Epoch: [18/250]	Iter: [4800/69500]	Time 0.19 (0.58)	Data 0.00 (0.37)	Loss 17.61816 (18.49852)	LR 0.00010	
+[2024-07-15 20:49:56,762][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4867
+[2024-07-15 20:50:09,566][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 4933
+[2024-07-15 20:50:22,412][   train_val.py][line: 235][    INFO] Epoch: [18/250]	Iter: [5000/69500]	Time 0.19 (0.20)	Data 0.00 (0.00)	Loss 22.57820 (19.06398)	LR 0.00010	
+[2024-07-15 20:50:57,350][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5031
+[2024-07-15 20:50:58,850][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5039
+[2024-07-15 20:51:19,420][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5145
+[2024-07-15 20:51:28,723][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5193
+[2024-07-15 20:51:29,883][   train_val.py][line: 235][    INFO] Epoch: [19/250]	Iter: [5200/69500]	Time 0.19 (0.34)	Data 0.00 (0.14)	Loss 17.76288 (18.81347)	LR 0.00010	
+[2024-07-15 20:51:39,416][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5248
+[2024-07-15 20:52:15,841][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5288
+[2024-07-15 20:52:28,054][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5351
+[2024-07-15 20:52:37,401][   train_val.py][line: 235][    INFO] Epoch: [20/250]	Iter: [5400/69500]	Time 0.19 (0.44)	Data 0.00 (0.24)	Loss 16.57465 (18.50587)	LR 0.00010	
+[2024-07-15 20:52:41,454][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5420
+[2024-07-15 20:53:00,735][   train_val.py][line: 203][ WARNING] NaN or Inf detected in model output at step 5519
+[2024-07-15 20:53:46,157][   train_val.py][line: 298][    INFO] Gathering final results ...
+[2024-07-15 20:53:46,158][   train_val.py][line: 300][    INFO]  * Loss 23.13879	total_num=2039.0
+[2024-07-15 20:54:04,577][ eval_helper.py][line: 224][    INFO] 
+|  clsname  |   max    |   mean   |   std    |
+|:---------:|:--------:|:--------:|:--------:|
+| UOG_1676  | 0.908388 | 0.955834 | 0.598658 |
+| UOG_1996  | 0.683406 | 0.517611 | 0.689702 |
+| UOG_2057  | 0.724145 | 0.636891 | 0.69467  |
+|   mean    | 0.77198  | 0.703445 | 0.66101  |
+[2024-07-15 20:54:04,591][   train_val.py][line: 135][    INFO] best_metric = 0.6610099863816169
