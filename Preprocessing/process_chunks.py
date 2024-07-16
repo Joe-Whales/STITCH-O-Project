@@ -123,11 +123,11 @@ def main(root_dir: str, output_dir: str):
         orchard_path = os.path.join(root_dir, orchard)
         output_path = os.path.join(output_dir, orchard)
         
-        # Perform train/test split
-        train_test_split(orchard_path)
-        
         # Process orchard
         process_orchard(orchard_path, output_path)
+        
+        # Perform train/test split
+        train_test_split(output_path)
         
         # Calculate mean and std
         mean, std = calculate_mean_std(output_path)
