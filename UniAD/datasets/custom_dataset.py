@@ -95,10 +95,6 @@ class CustomDataset(BaseDataset):
         filename = meta["filename"]
         label = meta["label"]
         image = self.image_reader(meta["filename"])
-        
-        # show with plt
-        plt.imshow(image.squeeze())
-        plt.show()
 
         input.update(
             {
@@ -113,24 +109,22 @@ class CustomDataset(BaseDataset):
             input["clsname"] = meta["clsname"]
         else:
             input["clsname"] = filename.split("/")[-4]
-            
-        #image = ((image - image.min()) / max((image.max() - image.min()), 0.1))*255.0
-
-        image = (image).astype(np.uint8)
-        # scale between min and max
-        
-        image = Image.fromarray(image.squeeze(), mode="L")
 
         # read / generate mask
         if meta.get("maskname", None):
             mask = self.image_reader(meta["maskname"], is_mask=True)
         else:
             if label == 0:  # good
-                mask = np.zeros((image.height, image.width)).astype(np.uint8)
+                mask = np.zeros((input["height"], input["width"])).astype(np.uint8)
             elif label == 1:  # defective
-                mask = (np.ones((image.height, image.width)) * 255).astype(np.uint8)
+                mask = (np.ones((input["height"], input["width"])) * 255).astype(np.uint8)
             else:
                 raise ValueError("Labels must be [None, 0, 1]!")
+
+        # convert image to tensor and permute
+        #image = from_numpy(image).float().permute(2, 0, 1)
+        image = (image*255.0).astype(np.uint8)
+        image = Image.fromarray(image.squeeze(), mode="L")
 
         mask = Image.fromarray(mask, "L")
 
@@ -138,13 +132,11 @@ class CustomDataset(BaseDataset):
             image, mask = self.transform_fn(image, mask)
         if self.colorjitter_fn:
             image = self.colorjitter_fn(image)
-            
-        image = transforms.ToTensor()(image)
-        mask = transforms.ToTensor()(mask)
         
+        image = transforms.ToTensor()(image)    
+        mask = transforms.ToTensor()(mask)
         # #if "mean" in meta and "std" in meta:
-        normalize_fn = transforms.Normalize(mean=image.mean(), std=max(image.std(), 0.001))
-        # normalize_fn = transforms.Normalize(mean=0.5, std=0.5)
+        normalize_fn = transforms.Normalize(mean=[0.485], std=[0.229])
         image = normalize_fn(image)
         
         # duplicate channels of image to 3
