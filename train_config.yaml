@@ -8,20 +8,20 @@ dataset:
   image_reader:
     type: npy
     kwargs:
-      image_dir: ./chunks/
+      image_dir: ./chunks_scaled/
 
   train:
-    meta_file: ./chunks/metadata/train_metadata.json
+    meta_file: ./chunks_scaled/metadata/train_metadata.json
     rebalance: False
     hflip: False
     vflip: False
     rotate: True
 
   test:
-    meta_file: ./chunks/metadata/test_metadata.json
+    meta_file: ./chunks_scaled/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
-  batch_size: 8
+  batch_size: 32
   normals: [0]
   workers: 8 # number of workers of dataloader for each process
 
