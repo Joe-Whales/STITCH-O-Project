@@ -95,6 +95,10 @@ class CustomDataset(BaseDataset):
         filename = meta["filename"]
         label = meta["label"]
         image = self.image_reader(meta["filename"])
+        
+        # show with plt
+        plt.imshow(image.squeeze())
+        plt.show()
 
         input.update(
             {
@@ -114,7 +118,6 @@ class CustomDataset(BaseDataset):
 
         image = (image).astype(np.uint8)
         # scale between min and max
-        
         
         image = Image.fromarray(image.squeeze(), mode="L")
 
