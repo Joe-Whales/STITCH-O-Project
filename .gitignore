@@ -27,3 +27,4 @@ data/MVTec-AD/mvtec_anomaly_detection/*
 *.pth.tar
 
 chunks/*
+*.tif
