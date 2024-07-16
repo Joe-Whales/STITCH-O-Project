@@ -104,6 +104,12 @@ def main():
         return
 
     criterion = build_criterion(config.criterion)
+    
+    for layer in frozen_layers:
+        module = getattr(model, layer)
+        module.eval()
+        for param in module.parameters():
+            param.requires_grad = False
 
     for epoch in range(last_epoch, config.trainer.max_epoch):
         last_iter = epoch * len(train_loader)
@@ -116,7 +122,6 @@ def main():
             last_iter,
             tb_logger,
             criterion,
-            frozen_layers,
             scaler=scaler,
         )
         lr_scheduler.step()
@@ -150,7 +155,6 @@ def train_one_epoch(
     start_iter,
     tb_logger,
     criterion,
-    frozen_layers,
     scaler=None,
 ):
 
@@ -159,11 +163,6 @@ def train_one_epoch(
     losses = AverageMeter(config.trainer.print_freq_step)
 
     model.train()
-    for layer in frozen_layers:
-        module = getattr(model, layer)
-        module.eval()
-        for param in module.parameters():
-            param.requires_grad = False
 
     world_size = 1
     rank = 0
@@ -178,13 +177,6 @@ def train_one_epoch(
         current_lr = lr_scheduler.get_last_lr()[0]
 
         data_time.update(time.time() - end)
-        
-        # # plt show 8x1 grid of images
-        # for i in range(8):
-        #     plt.subplot(1, 8, i + 1)
-        #     plt.imshow(input["image"][i].permute(1, 2, 0).numpy())
-        #     plt.title(f"Label: {input['label'][i]}")
-        # plt.show()
 
         with autocast():
             outputs = model(input)
