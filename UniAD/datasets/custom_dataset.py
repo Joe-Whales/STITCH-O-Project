@@ -123,9 +123,9 @@ class CustomDataset(BaseDataset):
                 raise ValueError("Labels must be [None, 0, 1]!")
 
         # convert image to tensor and permute
-        #image = from_numpy(image).float().permute(2, 0, 1)
-        image = (image*255.0).astype(np.uint8)
-        image = Image.fromarray(image.squeeze(), mode="L")
+        image = from_numpy(image).float().permute(2, 0, 1)
+        #image = (image*255.0).astype(np.uint8)
+        #image = Image.fromarray(image.squeeze(), mode="L")
 
         mask = Image.fromarray(mask, "L")
 
@@ -134,7 +134,7 @@ class CustomDataset(BaseDataset):
         if self.colorjitter_fn:
             image = self.colorjitter_fn(image)
         
-        image = transforms.ToTensor()(image)    
+        #image = transforms.ToTensor()(image)    
         mask = transforms.ToTensor()(mask)
         # #if "mean" in meta and "std" in meta:
         normalize_fn = transforms.Normalize(mean=[0.485], std=[0.229])
