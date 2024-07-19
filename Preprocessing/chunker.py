@@ -317,9 +317,13 @@ def main():
                 
                 scale_ratio = config["scale_ratio"]
                 
+                reference_file = config["reference"]
                 # get width and height of RGB file for orchard and times each by scale factor (new height and width of each channel for this particular orchard)
                 rgb_path = os.path.join(path, "orthos", "export-data", "orthomosaic_visible.tif")
-                width, height = getTIFDimensions(rgb_path)
+                if os.path.exists(rgb_path):
+                    width, height = getTIFDimensions(rgb_path)
+                else:
+                    width, height = getTIFDimensions(reference_file)
 
                 scale_width = int(scale_ratio * width)
                 scale_height = int(scale_ratio * height)
@@ -330,7 +334,7 @@ def main():
                 # mask used to hide outer boundary and unwanted regions (buildings, etc.). Also used to determine which blocks are normal, case 1, or case 2 anomalies
                 mask_file = config["mask"]
                 # reference file used to determine nodata regions and clip the rasters against before upscaling
-                reference_file = config["reference"]
+                
                 output_dir = config["output_path"]
 
             except KeyError as e:
