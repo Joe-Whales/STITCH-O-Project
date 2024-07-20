@@ -95,12 +95,23 @@ def process_orchard(orchard_path: str, output_path: str):
                                      [max_vals]*len(file_list), output_file_list))
 
 def calculate_mean_std(orchard_path: str) -> Tuple[np.ndarray, np.ndarray]:
-    """Calculate mean and standard deviation for an orchard."""
-    file_list = [os.path.join(root, f) for root, _, files in os.walk(orchard_path) 
-                 for f in files if f.endswith('.npy')]
+    """Calculate mean and standard deviation for an orchard using only train/normal data."""
+    train_normal_path = os.path.join(orchard_path, "train", "normal")
     
-    data_sum = np.zeros(3)
-    data_sq_sum = np.zeros(3)
+    if not os.path.exists(train_normal_path):
+        print(f"Warning: No train/normal folder found for {orchard_path}")
+        return None, None
+
+    file_list = [os.path.join(train_normal_path, f) for f in os.listdir(train_normal_path) 
+                 if f.endswith('.npy')]
+    
+    if not file_list:
+        print(f"Warning: No .npy files found in {train_normal_path}")
+        return None, None
+
+    ch = np.load(file_list[0]).shape[2]
+    data_sum = np.zeros(ch)
+    data_sq_sum = np.zeros(ch)
     total_pixels = 0
     
     for file in file_list:
@@ -113,7 +124,6 @@ def calculate_mean_std(orchard_path: str) -> Tuple[np.ndarray, np.ndarray]:
     std = np.sqrt(data_sq_sum / total_pixels - np.square(mean))
     
     return mean, std
-
 def main(root_dir: str, output_dir: str):
     orchards = [orchard for orchard in os.listdir(root_dir) 
                 if os.path.isdir(os.path.join(root_dir, orchard)) and 

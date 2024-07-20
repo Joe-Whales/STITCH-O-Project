@@ -2,6 +2,8 @@ import os
 import json
 import numpy as np
 import argparse
+import random
+from collections import defaultdict
 
 # Define the class names and their corresponding labels
 class_labels = {
@@ -11,7 +13,6 @@ class_labels = {
     "case_3": 1
 }
 
-# Function to read mean and std values from data_stats folder
 def read_stats(orchard_path):
     stats_path = os.path.join(orchard_path, "data_stats")
     mean_path = os.path.join(stats_path, "train_means.npy")
@@ -24,7 +25,6 @@ def read_stats(orchard_path):
     else:
         return None, None
 
-# Function to process files in a directory
 def process_directory(dir_path, class_name, split, orchard_name, mean, std):
     metadata = []
     for filename in os.listdir(dir_path):
@@ -36,36 +36,73 @@ def process_directory(dir_path, class_name, split, orchard_name, mean, std):
                 "label_name": "good" if class_labels[class_name] == 0 else "defective",
                 "clsname": orchard_name,
                 "mean": mean,
-                "std": std
+                "std": std,
+                "case": class_name
             }
             metadata.append(metadata_entry)
     return metadata
 
-def main(root_dir, case):
-    # Process all orchards
+def main(root_dir):
     all_metadata = {"train": [], "test": []}
+    case_metadata = defaultdict(lambda: defaultdict(list))
+    normal_metadata = defaultdict(list)
 
     for orchard in os.listdir(root_dir):
         orchard_path = os.path.join(root_dir, orchard)
         if os.path.isdir(orchard_path):
             mean, std = read_stats(orchard_path)
             
-            # Process training data
             train_dir = os.path.join(orchard_path, "train")
             if os.path.exists(train_dir):
                 normal_dir = os.path.join(train_dir, "normal")
                 if os.path.exists(normal_dir):
                     all_metadata["train"].extend(process_directory(normal_dir, "normal", "train", orchard, mean, std))
             
-            # Process test data
             test_dir = os.path.join(orchard_path, "test")
             if os.path.exists(test_dir):
                 for class_name in class_labels.keys():
-                    if case and class_name != "normal" and class_name != case:
-                        continue
                     class_dir = os.path.join(test_dir, class_name)
                     if os.path.exists(class_dir):
-                        all_metadata["test"].extend(process_directory(class_dir, class_name, "test", orchard, mean, std))
+                        processed_data = process_directory(class_dir, class_name, "test", orchard, mean, std)
+                        if class_name != "normal":
+                            case_metadata[class_name][orchard].extend(processed_data)
+                        else:
+                            normal_metadata[orchard].extend(processed_data)
+
+    ordered_test_metadata = []
+
+    # First, add all_case_x entries
+    for case_name in sorted(case_metadata.keys()):
+        all_case_data = []
+        for orchard, case_data in case_metadata[case_name].items():
+            if orchard in normal_metadata and normal_metadata[orchard]:
+                needed_normal = len(case_data)
+                sampled_normal = random.sample(normal_metadata[orchard], min(needed_normal, len(normal_metadata[orchard])))
+                all_case_data.extend(case_data)
+                all_case_data.extend(sampled_normal)
+
+        if all_case_data:
+            all_case_clsname = f"all_{case_name}"
+            for entry in all_case_data:
+                new_entry = entry.copy()
+                new_entry["clsname"] = all_case_clsname
+                ordered_test_metadata.append(new_entry)
+
+    # Then, add orchard_case_x entries
+    for case_name in sorted(case_metadata.keys()):
+        for orchard in sorted(case_metadata[case_name].keys()):
+            case_data = case_metadata[case_name][orchard]
+            if orchard in normal_metadata and normal_metadata[orchard]:
+                needed_normal = len(case_data)
+                sampled_normal = random.sample(normal_metadata[orchard], min(needed_normal, len(normal_metadata[orchard])))
+                
+                orchard_case_clsname = f"{orchard}_{case_name}"
+                for entry in case_data + sampled_normal:
+                    new_entry = entry.copy()
+                    new_entry["clsname"] = orchard_case_clsname
+                    ordered_test_metadata.append(new_entry)
+            else:
+                print(f"Warning: No normal samples for orchard {orchard}. Skipping {case_name} for this orchard.")
 
     # Create metadata folder if it doesn't exist
     metadata_dir = os.path.join(root_dir, "metadata")
@@ -79,10 +116,10 @@ def main(root_dir, case):
             json.dump(entry, f)
             f.write("\n")
 
-    # Save the test metadata to a JSON file
+    # Save the ordered test metadata to a JSON file
     test_output_file = os.path.join(metadata_dir, "test_metadata.json")
     with open(test_output_file, "w") as f:
-        for entry in all_metadata["test"]:
+        for entry in ordered_test_metadata:
             json.dump(entry, f)
             f.write("\n")
 
@@ -90,10 +127,8 @@ def main(root_dir, case):
     print(f"Test metadata file '{test_output_file}' has been generated successfully.")
 
 if __name__ == "__main__":
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Generate metadata for orchard dataset")
     parser.add_argument("root_dir", type=str, help="Root directory where your dataset is located")
-    parser.add_argument("--case", choices=["case_1", "case_2", "case_3"], help="Filter test metadata by specific case")
     args = parser.parse_args()
 
-    main(args.root_dir, args.case)
+    main(args.root_dir)

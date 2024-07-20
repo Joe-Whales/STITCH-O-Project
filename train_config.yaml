@@ -21,7 +21,7 @@ dataset:
     meta_file: ./chunks_scaled/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
-  batch_size: 32
+  batch_size: 64
   normals: [0]
   workers: 8 # number of workers of dataloader for each process
 
@@ -103,7 +103,7 @@ net:
           prob: 1.0
         neighbor_mask:
           neighbor_size: [7,7]
-          mask: [True, True, True] # whether use mask in [enc, dec1, dec2]
+          mask: [False, False, False] # whether use mask in [enc, dec1, dec2]
         save_recon: False
         initializer:
           method: xavier_uniform
