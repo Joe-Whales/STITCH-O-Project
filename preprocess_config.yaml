@@ -7,11 +7,12 @@ files:
 
 mask: .\Preprocessing\data\UOG_1996\mask_1996.tif
 reference: .\Preprocessing\data\UOG_1996\orthos\raster.tif
-chunk_size: 120
-chunk_overlap: 20
+scale_file: .\Preprocessing\data\UOG_1996\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
 anomaly_threshold: 0.8
 normal_threshold: 0.0
-scale_ratio: 0.6
+scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_1676
 output_path: chunks/UOG_1676/
@@ -22,11 +23,12 @@ files:
 
 mask: .\Preprocessing\data\UOG_1676\mask_1676.tif
 reference: .\Preprocessing\data\UOG_1676\orthos\raster.tif
-chunk_size: 120
-chunk_overlap: 20
+scale_file: .\Preprocessing\data\UOG_1676\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
 anomaly_threshold: 0.8
 normal_threshold: 0.0
-scale_ratio: 0.6
+scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_2057
 output_path: chunks/UOG_2057/
@@ -37,11 +39,12 @@ files:
 
 mask: .\Preprocessing\data\UOG_2057\mask_2057.tif
 reference: .\Preprocessing\data\UOG_2057\orthos\raster.tif
-chunk_size: 120
-chunk_overlap: 20
+scale_file: .\Preprocessing\data\UOG_2057\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
 anomaly_threshold: 0.8
 normal_threshold: 0.0
-scale_ratio: 0.6
+scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_1883
 output_path: chunks/UOG_1883/
@@ -52,11 +55,12 @@ files:
 
 mask: .\Preprocessing\data\UOG_1883\mask_1883.tif
 reference: .\Preprocessing\data\UOG_1883\orthos\raster.tif
-chunk_size: 120
-chunk_overlap: 20
+scale_file: .\Preprocessing\data\UOG_1883\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
 anomaly_threshold: 0.8
 normal_threshold: 0.0
-scale_ratio: 0.6
+scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_2223
 output_path: chunks/UOG_2223/
@@ -67,11 +71,12 @@ files:
 
 mask: .\Preprocessing\data\UOG_2223\mask_2223.tif
 reference: .\Preprocessing\data\UOG_2223\orthos\raster.tif
-chunk_size: 120
-chunk_overlap: 20
+scale_file: .\Preprocessing\data\UOG_2223\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
 anomaly_threshold: 0.8
 normal_threshold: 0.0
-scale_ratio: 0.6
+scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_2227
 output_path: chunks/UOG_2227/
@@ -82,8 +87,9 @@ files:
 
 mask: .\Preprocessing\data\UOG_2227\mask_2227.tif
 reference: .\Preprocessing\data\UOG_2227\orthos\raster.tif
-chunk_size: 120
-chunk_overlap: 20
+scale_file: .\Preprocessing\data\UOG_2227\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
 anomaly_threshold: 0.8
 normal_threshold: 0.0
-scale_ratio: 0.6
+scale_ratio: 1.0

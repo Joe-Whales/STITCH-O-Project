@@ -312,16 +312,16 @@ def main():
                 chunk_size = config["chunk_size"]
                 chunk_overlap = config["chunk_overlap"]
                 # this represents the percentage overlap a chunk needs to have with an anomalous region to be considered anomalous
-                #normal_threshold = config["normal_threshold"]
                 anomaly_threshold = config["anomaly_threshold"]
                 
                 scale_ratio = config["scale_ratio"]
                 
                 reference_file = config["reference"]
+                scale_file = config["scale_file"]
                 # get width and height of RGB file for orchard and times each by scale factor (new height and width of each channel for this particular orchard)
-                rgb_path = os.path.join(path, "orthos", "export-data", "orthomosaic_visible.tif")
-                if os.path.exists(rgb_path):
-                    width, height = getTIFDimensions(rgb_path)
+                #rgb_path = os.path.join(path, "orthos", "export-data", "orthomosaic_visible.tif")
+                if os.path.exists(scale_file):
+                    width, height = getTIFDimensions(scale_file)
                 else:
                     width, height = getTIFDimensions(reference_file)
 
