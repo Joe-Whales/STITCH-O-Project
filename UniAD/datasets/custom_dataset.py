@@ -124,8 +124,6 @@ class CustomDataset(BaseDataset):
 
         # convert image to tensor and permute
         image = from_numpy(image).float().permute(2, 0, 1)
-        #image = (image*255.0).astype(np.uint8)
-        #image = Image.fromarray(image.squeeze(), mode="L")
 
         mask = Image.fromarray(mask, "L")
 
@@ -134,10 +132,12 @@ class CustomDataset(BaseDataset):
         if self.colorjitter_fn:
             image = self.colorjitter_fn(image)
         
-        #image = transforms.ToTensor()(image)    
         mask = transforms.ToTensor()(mask)
-        # #if "mean" in meta and "std" in meta:
-        normalize_fn = transforms.Normalize(mean=[0.485], std=[0.229])
+        if "mean" in meta and "std" in meta:
+            normalize_fn = transforms.Normalize(mean=meta["mean"], std=meta["std"])
+        else:
+            normalize_fn = transforms.Normalize(mean=[0.485], std=[0.229])
+        
         image = normalize_fn(image)
         
         # duplicate channels of image to 3
