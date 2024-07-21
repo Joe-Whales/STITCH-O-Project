@@ -42,7 +42,7 @@ def process_directory(dir_path, class_name, split, orchard_name, mean, std):
             metadata.append(metadata_entry)
     return metadata
 
-def main(root_dir):
+def main(root_dir, verbose):
     all_metadata = {"train": [], "test": []}
     case_metadata = defaultdict(lambda: defaultdict(list))
     normal_metadata = defaultdict(list)
@@ -71,7 +71,8 @@ def main(root_dir):
 
     ordered_test_metadata = []
 
-    # First, add all_case_x entries
+    # Collect statistics for each case and all cases
+    statistics = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     for case_name in sorted(case_metadata.keys()):
         all_case_data = []
         for orchard, case_data in case_metadata[case_name].items():
@@ -80,6 +81,11 @@ def main(root_dir):
                 sampled_normal = random.sample(normal_metadata[orchard], min(needed_normal, len(normal_metadata[orchard])))
                 all_case_data.extend(case_data)
                 all_case_data.extend(sampled_normal)
+                
+                statistics[case_name][orchard]['normal'] = len(sampled_normal)
+                statistics[case_name][orchard]['defective'] = len(case_data)
+                statistics[f'all_{case_name}'][orchard]['normal'] += len(sampled_normal)
+                statistics[f'all_{case_name}'][orchard]['defective'] += len(case_data)
 
         if all_case_data:
             all_case_clsname = f"all_{case_name}"
@@ -103,6 +109,16 @@ def main(root_dir):
                     ordered_test_metadata.append(new_entry)
             else:
                 print(f"Warning: No normal samples for orchard {orchard}. Skipping {case_name} for this orchard.")
+
+    # Print statistics if in verbose mode
+    if verbose:
+        print("\nStatistics for each case:")
+        for case_name in sorted(statistics.keys()):
+            print(f"\n{case_name.upper()}:")
+            for orchard in sorted(statistics[case_name].keys()):
+                print(f"  {orchard}:")
+                print(f"    Normal: {statistics[case_name][orchard]['normal']}")
+                print(f"    Defective: {statistics[case_name][orchard]['defective']}")
 
     # Create metadata folder if it doesn't exist
     metadata_dir = os.path.join(root_dir, "metadata")
@@ -129,6 +145,7 @@ def main(root_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate metadata for orchard dataset")
     parser.add_argument("root_dir", type=str, help="Root directory where your dataset is located")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print detailed statistics")
     args = parser.parse_args()
 
-    main(args.root_dir)
+    main(args.root_dir, args.verbose)

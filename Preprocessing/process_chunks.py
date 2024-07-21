@@ -41,10 +41,10 @@ def train_test_split(folder_path: str):
                 print(f"{case} contains {npy_count} .npy files")
     
     if case_counts:
-        avg_count = sum(case_counts) // len(case_counts)
-        print(f"Average .npy count: {avg_count}")
+        move_count = max(case_counts)
+        print(f"Average .npy count: {move_count}")
         normal_files = [f for f in os.listdir(os.path.join(folder_path, 'train', 'normal')) if f.endswith('.npy')]
-        files_to_move = random.sample(normal_files, min(avg_count, len(normal_files)//4))
+        files_to_move = random.sample(normal_files, min(move_count, len(normal_files)//4))
         
         for file in files_to_move:
             shutil.move(os.path.join(folder_path, 'train', 'normal', file), 
