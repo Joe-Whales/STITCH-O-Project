@@ -42,7 +42,7 @@ def process_directory(dir_path, class_name, split, orchard_name, mean, std):
             metadata.append(metadata_entry)
     return metadata
 
-def main(root_dir, verbose):
+def main(root_dir, verbose, totals):
     all_metadata = {"train": [], "test": []}
     case_metadata = defaultdict(lambda: defaultdict(list))
     normal_metadata = defaultdict(list)
@@ -94,21 +94,22 @@ def main(root_dir, verbose):
                 new_entry["clsname"] = all_case_clsname
                 ordered_test_metadata.append(new_entry)
 
-    # Then, add orchard_case_x entries
-    for case_name in sorted(case_metadata.keys()):
-        for orchard in sorted(case_metadata[case_name].keys()):
-            case_data = case_metadata[case_name][orchard]
-            if orchard in normal_metadata and normal_metadata[orchard]:
-                needed_normal = len(case_data)
-                sampled_normal = random.sample(normal_metadata[orchard], min(needed_normal, len(normal_metadata[orchard])))
-                
-                orchard_case_clsname = f"{orchard}_{case_name}"
-                for entry in case_data + sampled_normal:
-                    new_entry = entry.copy()
-                    new_entry["clsname"] = orchard_case_clsname
-                    ordered_test_metadata.append(new_entry)
-            else:
-                print(f"Warning: No normal samples for orchard {orchard}. Skipping {case_name} for this orchard.")
+    if not totals:
+        # Then, add orchard_case_x entries
+        for case_name in sorted(case_metadata.keys()):
+            for orchard in sorted(case_metadata[case_name].keys()):
+                case_data = case_metadata[case_name][orchard]
+                if orchard in normal_metadata and normal_metadata[orchard]:
+                    needed_normal = len(case_data)
+                    sampled_normal = random.sample(normal_metadata[orchard], min(needed_normal, len(normal_metadata[orchard])))
+                    
+                    orchard_case_clsname = f"{orchard}_{case_name}"
+                    for entry in case_data + sampled_normal:
+                        new_entry = entry.copy()
+                        new_entry["clsname"] = orchard_case_clsname
+                        ordered_test_metadata.append(new_entry)
+                else:
+                    print(f"Warning: No normal samples for orchard {orchard}. Skipping {case_name} for this orchard.")
 
     # Print statistics if in verbose mode
     if verbose:
@@ -146,6 +147,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate metadata for orchard dataset")
     parser.add_argument("root_dir", type=str, help="Root directory where your dataset is located")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print detailed statistics")
+    parser.add_argument("-t", "--totals", action="store_true", help="Print total statistics only")
     args = parser.parse_args()
 
-    main(args.root_dir, args.verbose)
+    main(args.root_dir, args.verbose, args.totals)
