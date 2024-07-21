@@ -135,8 +135,8 @@ class CustomDataset(BaseDataset):
         mask = transforms.ToTensor()(mask)
         if "mean" in meta and "std" in meta:
             normalize_fn = transforms.Normalize(mean=meta["mean"], std=meta["std"])
-        else:
-            normalize_fn = transforms.Normalize(mean=[0.485], std=[0.229])
+        # else:
+        normalize_fn = transforms.Normalize(mean=[0.485], std=[0.229])
         
         image = normalize_fn(image)
         

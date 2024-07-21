@@ -21,7 +21,7 @@ dataset:
     meta_file: ./chunks_scaled/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
-  batch_size: 64
+  batch_size: 8
   normals: [0]
   workers: 8 # number of workers of dataloader for each process
 
@@ -42,7 +42,7 @@ trainer:
     type: StepLR
     kwargs:
       step_size: 50
-      gamma: 0.1
+      gamma: 0.5
   optimizer:
     type: AdamW
     kwargs:

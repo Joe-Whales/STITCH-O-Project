@@ -388,7 +388,8 @@ def build_resnet(model_name, pretrained, layers, pretrained_model="", **kwargs):
     else:
         model = ResNet(Bottleneck, layers, **kwargs)
     if pretrained:
-        if os.path.exists(pretrained_model):
+        #if os.path.exists(pretrained_model):
+        if 0:
             state_dict = torch.load(pretrained_model)
         else:
             logger.info(
