@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F
 from sklearn import metrics
 import gc
+import matplotlib.pyplot as plt
 
 
 def dump(save_dir, outputs):
@@ -98,6 +99,15 @@ class EvalImage:
         self.preds_defe = sorted(self.preds[self.masks == 1], reverse=True)
         self.num_good = len(self.preds_good)
         self.num_defe = len(self.preds_defe)
+        
+        # Check if predictions are inverted for defective cases
+        self.is_inverted = np.mean(self.preds_defe) < np.mean(self.preds_good)
+
+        # If inverted, adjust predictions
+        if self.is_inverted:
+            self.preds = np.max(self.preds) - self.preds
+            self.preds_good = self.preds[self.masks == 0]
+            self.preds_defe = self.preds[self.masks == 1]
 
     @staticmethod
     def encode_pred(preds):
@@ -114,6 +124,80 @@ class EvalImage:
         if auc < 0.5:
             auc = 1 - auc
         return auc
+
+    def get_classification_metrics(self, threshold=0.5):
+        binary_preds = (self.preds >= threshold).astype(int)
+        
+        accuracy = np.mean(binary_preds == self.masks)
+        precision = metrics.precision_score(self.masks, binary_preds)
+        recall = metrics.recall_score(self.masks, binary_preds)
+        f1_score = metrics.f1_score(self.masks, binary_preds)
+        
+        return {
+            'accuracy': accuracy,
+            'precision': precision,
+            'recall': recall,
+            'f1_score': f1_score
+        }
+    
+    def find_optimal_threshold(self):
+        fpr, tpr, thresholds = metrics.roc_curve(self.masks, self.preds, pos_label=1)
+        
+        # Calculate Youden's J statistic for all thresholds
+        youden_j = tpr - fpr
+        
+        # Find the threshold with the maximum Youden's J statistic
+        optimal_idx = np.argmax(youden_j)
+        optimal_threshold = thresholds[optimal_idx]
+        
+        return optimal_threshold
+    
+    def plot_distribution(self):
+        plt.hist(self.preds_good, bins=50, alpha=0.5, label='Good Predictions')
+        plt.hist(self.preds_defe, bins=50, alpha=0.5, label='Defective Predictions')
+        plt.xlabel('Prediction Scores')
+        plt.ylabel('Frequency')
+        plt.legend()
+        plt.title('Prediction Score Distribution')
+        plt.show()
+
+    def plot_roc_curve(self):
+        fpr, tpr, thresholds = metrics.roc_curve(self.masks, self.preds, pos_label=1)
+        plt.plot(fpr, tpr, marker='.')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve')
+        plt.show()
+
+    def print_summary_statistics(self):
+        print(f"Summary Statistics for Predictions")
+        print(f"Mean: {np.mean(self.preds)}")
+        print(f"Median: {np.median(self.preds)}")
+        print(f"Standard Deviation: {np.std(self.preds)}")
+        print(f"Min: {np.min(self.preds)}")
+        print(f"Max: {np.max(self.preds)}")
+
+        print(f"Summary Statistics for Good Predictions")
+        print(f"Mean: {np.mean(self.preds_good)}")
+        print(f"Median: {np.median(self.preds_good)}")
+        print(f"Standard Deviation: {np.std(self.preds_good)}")
+        print(f"Min: {np.min(self.preds_good)}")
+        print(f"Max: {np.max(self.preds_good)}")
+
+        print(f"Summary Statistics for Defective Predictions")
+        print(f"Mean: {np.mean(self.preds_defe)}")
+        print(f"Median: {np.median(self.preds_defe)}")
+        print(f"Standard Deviation: {np.std(self.preds_defe)}")
+        print(f"Min: {np.min(self.preds_defe)}")
+        print(f"Max: {np.max(self.preds_defe)}")
+
+    def plot_confusion_matrix(self, threshold=0.5):
+        binary_preds = (self.preds >= threshold).astype(int)
+        cm = metrics.confusion_matrix(self.masks, binary_preds)
+        disp = metrics.ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot(cmap=plt.cm.Blues)
+        plt.title(f'Confusion Matrix at Threshold {threshold}')
+        plt.show()
 
 
 class EvalImageMean(EvalImage):
@@ -187,7 +271,26 @@ def performances(fileinfos, preds, masks, config):
                 evalname = metric["name"]
                 kwargs = metric.get("kwargs", {})
                 eval_method = eval_lookup_table[evalname](data_meta, **kwargs)
+                optimal_threshold = eval_method.find_optimal_threshold()
+    
+                # Print summary statistics
+                eval_method.print_summary_statistics()
+
+                # Plot prediction score distribution
+                eval_method.plot_distribution()
+
+                # Plot ROC curve
+                eval_method.plot_roc_curve()
+
+                # Plot confusion matrix at optimal threshold
+                eval_method.plot_confusion_matrix(optimal_threshold)
+
+                # Detailed metrics
+                metrics = eval_method.get_classification_metrics(optimal_threshold)
+                print(f'{clsname} {evalname} metrics: {metrics}')
+
                 auc = eval_method.eval_auc()
+                print(f'{clsname} {evalname} AUROC: {auc}')
                 ret_metrics["{}_{}_auc".format(clsname, evalname)] = auc
 
     if config.get("auc", None):
