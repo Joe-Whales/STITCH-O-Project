@@ -251,7 +251,7 @@ eval_lookup_table = {
 }
 
 
-def performances(fileinfos, preds, masks, config):
+def performances(fileinfos, preds, masks, config, verbose=False):
     ret_metrics = {}
     clsnames = set([fileinfo["clsname"] for fileinfo in fileinfos])
     for clsname in clsnames:
@@ -272,26 +272,17 @@ def performances(fileinfos, preds, masks, config):
                 kwargs = metric.get("kwargs", {})
                 eval_method = eval_lookup_table[evalname](data_meta, **kwargs)
                 optimal_threshold = eval_method.find_optimal_threshold()
-    
-                # Print summary statistics
-                eval_method.print_summary_statistics()
-
-                # Plot prediction score distribution
-                eval_method.plot_distribution()
-
-                # Plot ROC curve
-                eval_method.plot_roc_curve()
-
-                # Plot confusion matrix at optimal threshold
-                eval_method.plot_confusion_matrix(optimal_threshold)
-
-                # Detailed metrics
                 metrics = eval_method.get_classification_metrics(optimal_threshold)
-                print(f'{clsname} {evalname} metrics: {metrics}')
-
+    
+                if verbose:
+                    eval_method.print_summary_statistics()
+                    eval_method.plot_distribution()
+                    eval_method.plot_roc_curve()
+                    eval_method.plot_confusion_matrix(optimal_threshold)
+                    
                 auc = eval_method.eval_auc()
-                print(f'{clsname} {evalname} AUROC: {auc}')
                 ret_metrics["{}_{}_auc".format(clsname, evalname)] = auc
+                ret_metrics["{}_{}_auc".format(clsname, "Accuracy")] = metrics["accuracy"]
 
     if config.get("auc", None):
         for metric in config.auc:

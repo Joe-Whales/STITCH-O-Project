@@ -15,13 +15,13 @@ dataset:
     rebalance: False
     hflip: False
     vflip: False
-    rotate: True
+    rotate: False
 
   test:
     meta_file: ./chunks_scaled/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
-  batch_size: 8
+  batch_size: 32
   normals: [0]
   workers: 8 # number of workers of dataloader for each process
 
@@ -41,7 +41,7 @@ trainer:
   lr_scheduler:
     type: StepLR
     kwargs:
-      step_size: 50
+      step_size: 100
       gamma: 0.5
   optimizer:
     type: AdamW
@@ -62,10 +62,10 @@ evaluator:
   key_metric: mean_std_auc
   metrics:
     auc:
-      - name: std
-      - name: max
-        kwargs:
-          avgpool_size: [16, 16]
+      # - name: std
+      # - name: max
+      #   kwargs:
+      #     avgpool_size: [16, 16]
       - name: mean
 
 

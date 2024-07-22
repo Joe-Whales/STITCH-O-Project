@@ -18,7 +18,6 @@ from utils.eval_helper import dump, log_metrics, merge_together, performances
 from utils.lr_helper import get_scheduler
 from utils.misc_helper import AverageMeter, create_logger, get_current_time, load_state, save_checkpoint, set_random_seed, update_config
 from utils.optimizer_helper import get_optimizer
-import matplotlib.pyplot as plt
 
 
 parser = argparse.ArgumentParser(description="UniAD Framework")
@@ -230,7 +229,7 @@ def train_one_epoch(
     print(f"Loss: {losses.avg} at epoch {epoch+1}")
 
 
-def validate(val_loader, model):
+def validate(val_loader, model, verbose=False):
     batch_time = AverageMeter(0)
     losses = AverageMeter(0)
 
@@ -278,7 +277,7 @@ def validate(val_loader, model):
         fileinfos, preds, masks = merge_together(config.evaluator.eval_dir)
         shutil.rmtree(config.evaluator.eval_dir)
         # evaluate, log & vis
-        ret_metrics = performances(fileinfos, preds, masks, config.evaluator.metrics)
+        ret_metrics = performances(fileinfos, preds, masks, config.evaluator.metrics, verbose)
         log_metrics(ret_metrics, config.evaluator.metrics)
         
     model.train()
