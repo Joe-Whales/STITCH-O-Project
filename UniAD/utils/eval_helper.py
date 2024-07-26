@@ -282,7 +282,7 @@ def performances(fileinfos, preds, masks, config, verbose=False):
                     
                 auc = eval_method.eval_auc()
                 ret_metrics["{}_{}_auc".format(clsname, evalname)] = auc
-                ret_metrics["{}_{}_auc".format(clsname, "Accuracy")] = metrics["accuracy"]
+                print(f'Accuracy for {clsname}: {metrics["accuracy"]}')
 
     if config.get("auc", None):
         for metric in config.auc:
