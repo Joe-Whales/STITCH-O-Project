@@ -28,6 +28,7 @@ data/MVTec-AD/mvtec_anomaly_detection/
 
 # Model checkpoints
 *.pth.tar
+*.pth
 
 # Chunks directory
 chunks/

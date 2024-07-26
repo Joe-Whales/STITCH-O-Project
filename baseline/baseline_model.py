@@ -197,7 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('config_path', type=str, help='Path to the configuration YAML file')
     args = parser.parse_args()
 
-    logging.basicConfig(filename='training_log.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
+    logging.basicConfig(filename='baseline/training_log.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Using device:', device)

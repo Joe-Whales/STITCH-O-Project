@@ -1,5 +1,5 @@
 # Model configuration
-model_path: "baseline_model.pth"
+model_path: baseline/baseline_model.pth
 num_epochs: 20
 learning_rate: 0.001
 weight_decay: 0.0001
