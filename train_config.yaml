@@ -35,7 +35,7 @@ criterion:
 trainer:
   max_epoch: 250
   clip_max_norm: 0.1
-  val_freq_epoch: 10
+  val_freq_epoch: 4
   print_freq_step: 200
   tb_freq_step: 500
   lr_scheduler:
@@ -62,10 +62,10 @@ evaluator:
   key_metric: mean_std_auc
   metrics:
     auc:
-      # - name: std
-      # - name: max
-      #   kwargs:
-      #     avgpool_size: [16, 16]
+      - name: std
+      - name: max
+        kwargs:
+          avgpool_size: [16, 16]
       - name: mean
 
 
@@ -95,7 +95,7 @@ net:
         num_encoder_layers: 4
         num_decoder_layers: 4
         dim_feedforward: 1024
-        dropout: 0.1
+        dropout: 0.0
         activation: relu
         normalize_before: False
         feature_jitter:

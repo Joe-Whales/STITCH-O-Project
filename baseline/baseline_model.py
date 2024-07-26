@@ -11,6 +11,8 @@ from torchvision.models import efficientnet_b4, EfficientNet_B4_Weights
 import numpy as np
 import argparse 
 from custom_dataset import build_custom_dataloader
+from utils import performances
+
 
 # Import the custom dataset and dataloader
 from custom_dataset import build_custom_dataloader
@@ -148,157 +150,33 @@ def train_model(model: nn.Module, train_loader, num_epochs: int, learning_rate: 
             }, model_path)
             print(f'Model saved at epoch {epoch+1}, with train loss: {train_loss:.4f}')
 
-def optimise_threshold(model: nn.Module, test_loader, device: str, checkpoint = None):
-    print('Optimizing threshold...')
+def validate(val_loader, model, verbose=False):
     model.eval()
-    model.to(device)
-    normal_loss = []
-    abnormal_loss = []
-    
-    if checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
-        print("Model loaded from checkpoint.")
-    
+    criterion = nn.MSELoss()
+    classes = {}
+
     with torch.no_grad():
-        for input in test_loader:
-            images = input["image"].to(device)
-            labels = input["label"].to(device)
-            features = model.feature_extractor(images)
-            reconstructed_features = model.unet(features)
-            loss = nn.functional.mse_loss(reconstructed_features, features, reduction='none').mean(dim=(1,2,3))
-            
-            normal_loss.extend(loss[labels == 0].cpu().numpy())
-            abnormal_loss.extend(loss[labels == 1].cpu().numpy())
+        for i, input in enumerate(val_loader):
+            clsname = input["clsname"][0]
+            if clsname not in classes.keys():
+                classes[clsname] = {"losses": [], "labels": []}
 
-    normal_loss = np.array(normal_loss)
-    abnormal_loss = np.array(abnormal_loss)
+            image = input["image"].cuda()
+            feature_rec, features = model(image)
 
-    thresholds = np.concatenate([normal_loss, abnormal_loss])
-    best_acc = (0, 0, 0)
-    best_threshold = 0
-    for threshold in thresholds:
-        normal_acc = (normal_loss < threshold).mean()
-        abnormal_acc = (abnormal_loss > threshold).mean()
-        overall_acc = ((normal_loss < threshold).sum() + (abnormal_loss > threshold).sum()) / (len(normal_loss) + len(abnormal_loss))
-        if overall_acc > best_acc[0]:
-            best_acc = (overall_acc, abnormal_acc, normal_acc)
-            best_threshold = threshold
-    
-    print(f'Best threshold: {best_threshold:.4f}, Best accuracy: {best_acc[0]:.4f}, Abnormal acc: {best_acc[1]:.4f}, Normal acc: {best_acc[2]:.4f}')
-    return best_acc
+            classes[clsname]["losses"].append(criterion(feature_rec, features.detach()).item())
+            classes[clsname]["labels"].append(input["label"].item())
 
-import numpy as np
-import torch
-from sklearn import metrics
-import matplotlib.pyplot as plt
-
-def optimise_threshold_new(model: nn.Module, test_loader, device: str, checkpoint=None):
-    print('Optimizing threshold...')
-    model.eval()
-    model.to(device)
-    
-    # Initialize dictionaries to store losses and labels for each class
-    class_losses = {}
-    class_labels = {}
-    
-    if checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
-        print("Model loaded from checkpoint.")
-    
-    with torch.no_grad():
-        for input in test_loader:
-            images = input["image"].to(device)
-            labels = input["label"].to(device)
-            clsnames = input["clsname"]  # Assuming clsname is provided in the input
-            features = model.feature_extractor(images)
-            reconstructed_features = model.unet(features)
-            loss = nn.functional.mse_loss(reconstructed_features, features, reduction='none').mean(dim=(1,2,3))
-            
-            for clsname in set(clsnames):
-                cls_mask = (clsnames == clsname)
-                if clsname not in class_losses:
-                    class_losses[clsname] = []
-                    class_labels[clsname] = []
-                
-                class_losses[clsname].extend(loss[cls_mask].cpu().numpy())
-                class_labels[clsname].extend(labels[cls_mask].cpu().numpy())
-
-    # Compute and print metrics for each class
     results = {}
-    
-    for clsname in class_losses:
-        normal_loss = np.array([loss for i, loss in enumerate(class_losses[clsname]) if class_labels[clsname][i] == 0])
-        abnormal_loss = np.array([loss for i, loss in enumerate(class_losses[clsname]) if class_labels[clsname][i] == 1])
-        all_labels = np.array(class_labels[clsname])
-        all_losses = np.array(class_losses[clsname])
-
-        # Compute AUROC
-        fpr, tpr, _ = metrics.roc_curve(all_labels, all_losses, pos_label=1)
-        auc = metrics.auc(fpr, tpr)
-        if auc < 0.5:
-            auc = 1 - auc
-
-        # Find optimal threshold
-        thresholds = np.concatenate([normal_loss, abnormal_loss])
-        fpr, tpr, threshold_values = metrics.roc_curve(all_labels, all_losses, pos_label=1)
-        youden_j = tpr - fpr
-        optimal_idx = np.argmax(youden_j)
-        optimal_threshold = threshold_values[optimal_idx]
-
-        # Calculate metrics for different thresholds
-        best_acc = (0, 0, 0)
-        best_threshold = 0
-        for threshold in thresholds:
-            binary_preds = (all_losses >= threshold).astype(int)
-            normal_preds = binary_preds[all_labels == 0]
-            abnormal_preds = binary_preds[all_labels == 1]
-
-            normal_acc = (normal_preds == 0).mean()  # True negatives over normal samples
-            abnormal_acc = (abnormal_preds == 1).mean()  # True positives over abnormal samples
-            overall_acc = ((binary_preds == all_labels).sum()) / len(all_labels)
-            
-            if overall_acc > best_acc[0]:
-                best_acc = (overall_acc, abnormal_acc, normal_acc)
-                best_threshold = threshold
-        
-        # Print results for each class
-        print(f'Class {clsname}: Best threshold: {best_threshold:.4f}, Best accuracy: {best_acc[0]:.4f}, Abnormal acc: {best_acc[1]:.4f}, Normal acc: {best_acc[2]:.4f}, AUROC: {auc:.4f}')
-        
-        # Store results
-        results[clsname] = {
-            'best_acc': best_acc,
-            'optimal_threshold': best_threshold,
-            'auc': auc
-        }
-        
-        # Plot ROC curve
-        plt.figure()
-        plt.plot(fpr, tpr, marker='.')
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title(f'ROC Curve for Class {clsname}')
-        plt.show()
-
-        # Plot distribution
-        plt.figure()
-        plt.hist(normal_loss, bins=50, alpha=0.5, label='Normal Loss')
-        plt.hist(abnormal_loss, bins=50, alpha=0.5, label='Abnormal Loss')
-        plt.xlabel('Loss')
-        plt.ylabel('Frequency')
-        plt.legend()
-        plt.title(f'Loss Distribution for Class {clsname}')
-        plt.show()
-
+    for clsname in classes.keys():
+        print(f"\nClass: {clsname}")
+        auroc, accuracy = performances(classes[clsname]["labels"], classes[clsname]["losses"], verbose=verbose)
+        results[clsname] = {"auroc": auroc, "accuracy": accuracy}
     return results
 
-
-def create_and_run_model(cfg, device, logger = False, eval_mode = False):
-    start_time = time.time()
-    
+def create_and_run_model(cfg, device, logger = False, eval_mode = False):    
     checkpoint = None
-
-    # Initialize model
-    model = FullModel()
+    model = FullModel().to(device)
 
     if os.path.exists(cfg["model_path"]):
         checkpoint = torch.load(cfg["model_path"])
@@ -312,13 +190,9 @@ def create_and_run_model(cfg, device, logger = False, eval_mode = False):
         train_model(model, train_loader, cfg["num_epochs"], cfg["learning_rate"], cfg["weight_decay"], device, cfg["model_path"], checkpoint=checkpoint)
     
     test_loader = build_custom_dataloader(cfg["test"], training=False)
-    run_stats = optimise_threshold_new(model, test_loader, device, checkpoint=checkpoint) 
-     
-    if logger:
-        logging.info(f"\nModel: {cfg['model_path'].split('.')[-1]}\n---\n Finished with best accuracy: {run_stats[0]:.4f}, Abnormal: {run_stats[1]:.4f}, Normal acc: {run_stats[2]:.4f}\nUsing cfg: {cfg}\n Runtime: {time.time() - start_time:.2f} seconds\n-------------")
+    run_stats = validate(test_loader, model, verbose=False)
     
 if __name__ == '__main__':
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Train and evaluate the model.")
     parser.add_argument('config_path', type=str, help='Path to the configuration YAML file')
     args = parser.parse_args()

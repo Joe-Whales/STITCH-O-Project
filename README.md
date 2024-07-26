@@ -1,135 +1,104 @@
-# UniAD
-Official PyTorch Implementation of [A Unified Model for Multi-class Anomaly Detection](https://arxiv.org/abs/2206.03687), Accepted by NeurIPS 2022 Spotlight.
+# STITCH-O: Anomaly Detection in Drone-based Orthomosaics
 
-![Image text](docs/setting.jpg)
-![Image text](docs/res_mvtec.jpg)
+## Overview
 
-## 1. Quick Start
+STITCH-O is a project aimed at identifying stitching artifacts in drone-based orthomosaics using anomaly detection techniques. This repository contains an adapted implementation of the UniAD (Unified Anomaly Detection) model, specifically tailored for detecting anomalies in orchard orthomosaic images.
 
-### 1.1 MVTec-AD
+## Table of Contents
 
-- **Create the MVTec-AD dataset directory**. Download the MVTec-AD dataset from [here](https://www.mvtec.com/company/research/datasets/mvtec-ad). Unzip the file and move some to `./data/MVTec-AD/`. The MVTec-AD dataset directory should be as follows. 
+- [STITCH-O: Anomaly Detection in Drone-based Orthomosaics](#stitch-o-anomaly-detection-in-drone-based-orthomosaics)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Background](#background)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Data Preparation](#data-preparation)
+    - [Image chunking](#image-chunking)
+  - [Model Architecture](#model-architecture)
+  - [Training](#training)
+  - [Evaluation](#evaluation)
+  - [Results](#results)
+  - [License](#license)
+  - [Acknowledgements](#acknowledgements)
 
-```
-|-- data
-    |-- MVTec-AD
-        |-- mvtec_anomaly_detection
-        |-- json_vis_decoder
-        |-- train.json
-        |-- test.json
-```
+## Background
 
-- **cd the experiment directory** by running `cd ./experiments/MVTec-AD/`. 
+Stitching artifacts in orthomosaics can lead to inaccurate analysis in precision farming. This project aims to automate the detection of these artifacts using state-of-the-art anomaly detection techniques.
 
-- **Train or eval** by running: 
+## Features
 
-    (1) For slurm group:  `sh train.sh #NUM_GPUS #PARTITION` or `sh eval.sh #NUM_GPUS #PARTITION`.
+- Adapted UniAD model for orthomosaic anomaly detection
+- Custom data loading pipeline for large-scale orthomosaic images
+- Modified training loop to accommodate specific requirements of orthomosaic data
+- Enhanced evaluation metrics tailored for stitching artifact detection
 
-    (2) For torch.distributed.launch:  `sh train_torch.sh #NUM_GPUS #GPU_IDS` or `sh eval_torch.sh #NUM_GPUS #GPU_IDS`, *e.g.*, train with GPUs 1,3,4,6 (4 GPUs in total): `sh train_torch.sh 4 1,3,4,6`.
+## Installation
 
-    **Note**: During eval, please *set config.saver.load_path* to load the checkpoints. 
+Create a new virtual environment and install the required packages using the following commands:
 
-- **Results and checkpoints**. 
-
-| Platform | GPU | Detection AUROC | Localization AUROC | Checkpoints | Note |
-| ------ | ------ | ------ | ------ | ------ | ------ | 
-| slurm group | 8 GPUs (NVIDIA Tesla V100 16GB)|  96.7 | 96.8 | [here](https://drive.google.com/file/d/1q03ysv_5VJATlDN-A-c9zvcTuyEeaQHG/view?usp=sharing) | ***A unified model for all categories*** |
-| torch.distributed.launch | 1 GPU (NVIDIA GeForce GTX 1080 Ti 11 GB)|  97.6 | 97.0 | [here](https://drive.google.com/file/d/1v282ZlibC-b0H9sjLUlOSCFNzEv-TIuh/view?usp=sharing) | ***A unified model for all categories*** |
-
-
-### 1.2 CIFAR-10
-
-- **Create the CIFAR-10 dataset directory**. Download the CIFAR-10 dataset from [here](http://www.cs.toronto.edu/~kriz/cifar.html). Unzip the file and move some to `./data/CIFAR-10/`. The CIFAR-10 dataset directory should be as follows. 
-
-```
-|-- data
-    |-- CIFAR-10
-        |-- cifar-10-batches-py
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-- **cd the experiment directory** by running `cd ./experiments/CIFAR-10/01234/`. Here we take class 0,1,2,3,4 as normal samples, and other settings are similar.
+## Usage
 
-- **Train or eval** by running: 
+To preprocess the orthomosaic data, run the following command and run the training script:
 
-    (1) For slurm group:  `sh train.sh #NUM_GPUS #PARTITION` or `sh eval.sh #NUM_GPUS #PARTITION`.
+```bash
+pipeline.bat
+```
 
-    (2) For torch.distributed.launch:  `sh train_torch.sh #NUM_GPUS #GPU_IDS` or `sh eval_torch.sh #NUM_GPUS #GPU_IDS`.
+Alternatively, you can run each component separately:
 
-    **Note**: During eval, please *set config.saver.load_path* to load the checkpoints. 
+```bash
+python .\Preprocessing\chunker.py preprocess_config.yaml
+python ./Preprocessing/process_chunks.py chunks chunks_scaled
+python .\Preprocessing\generate_metadata.py chunks_scaled
+python .\UniAD\train_val.py --config train_config.yaml
+```
 
-- **Results and checkpoints**. Training on 8 GPUs (NVIDIA Tesla V100 16GB) results in following performance.
+## Data Preparation
 
-| Normal Samples | {01234} | {56789} | {02468} | {13579} | Mean |
-| ------ | ------ | ------ | ------ | ------ | ------ |
-| AUROC | 84.4 | 79.6 | 93.0 | 89.1 | 86.5 |
+[Explain the data preprocessing steps, including image chunking and dimension selection]
+### Image chunking
+Orthomosaic images are typically large in size, which can make training difficult. To address this, we chunk the images into smaller pieces and resize them to a fixed dimension. This allows us to train the model on smaller image patches. Since the focus of this project is simply detecting the presence of stitching artifacts, we have chosen to mask out regions that are not either stitching artifacts or normal orchard regions. This is done by creating a mask layer where out of scope regions are set to 0, case 1 anomalies are set to 1, case 2 anomalies are set to 2 and normal orchard regions have no value. 
+
+## Model Architecture
+
+This project uses an adapted version of the UniAD model. Key modifications include:
+
+[List major changes made to the original UniAD architecture]
+
+## Training
+
+[Provide details about the training process, including any custom training loops or techniques]
+
+## Evaluation
+
+[Describe the evaluation metrics used (e.g., AUROC, Precision-Recall curves) and how they are implemented]
+
+## Results
+[Summarize the performance of the model on the orthomosaic dataset]
+Results of training the model for 10 epochs:
+|  clsname   |   mean   |
+|:----------:|:--------:|
+| all_case_2 | 0.936906 |
+| all_case_1 | 0.987834 |
+|    mean    | 0.96237  |
+Classification accuracy for all_case_2: 0.9369058309037901
+Classification accuracy for all_case_1: 0.9878338278931751
+
+Due to the nature of the data and the fact that the case 1 anomalies get a lower anomaly score than normal images while case 2 anomalies get a higher anomaly score than normal images, the model requires two thresholds in order to accuractely classify the images. The thresholds are roughly 35 and below for case 1 anomalies and 60 and above for case 2 anomalies. These results were obtained using a 0.8 anomaly threshold in the preprocessing configuration file. 
 
 
-## 2. Visualize Reconstructed Features
+## License
 
-We **highly recommend** to visualize reconstructed features, since this could directly prove that our UniAD *reconstructs anomalies to their corresponding normal samples*. 
+[Include information about the project's license]
 
-### 2.1 Train Decoders for Visualization
+## Acknowledgements
 
-- **cd the experiment directory** by running `cd ./experiments/train_vis_decoder/`. 
-
-- **Train** by running: 
-
-    (1) For slurm group:  `sh train.sh #NUM_GPUS #PARTITION`.
-
-    (2) For torch.distributed.launch: `sh train_torch.sh #NUM_GPUS #GPU_IDS #CLASS_NAME`.
-
-    **Note**: for torch.distributed.launch, you should *train one vis_decoder for a specific class for one time*. 
-
-### 2.2 Visualize Reconstructed Features
-
-- **cd the experiment directory** by running `cd ./experiments/vis_recon/`. 
-
-- **Visualize** by running (only support 1 GPU): 
-
-    (1) For slurm group:  `sh vis_recon.sh #PARTITION`.
-
-    (2) For torch.distributed.launch:  `sh vis_recon_torch.sh #CLASS_NAME`.
-
-    **Note**: for torch.distributed.launch, you should *visualize a specific class for one time*. 
-
-## 3. Questions
-
-### 3.1 Explanation of Evaluation Results
-
-The first line of the evaluation results are shown as follows. 
-
-|  clsname   |   pixel  |   mean   |   max    |   std    |
-|:----------:|:--------:|:--------:|:--------:|:--------:|
-
-The *pixel* means anomaly localization results. 
-
-The *mean*, *max*, and *std* mean **post-processing methods** for anomaly detection. That is to say, the anomaly localization result is an anomaly map with the shape of *H x W*. We need to *convert this map to a scalar* as the anomaly score for this whole image. For this convert, you have 3 options: 
-
-- use the *mean* value of the anomaly map.
-- use the *max* value of the (averagely pooled) anomaly map.
-- use the *std* value of the anomaly map.
-
-In our paper, we use *max* for MVTec-AD and *mean* for CIFAR-10. 
-
-### 3.2 Visualize Learned Query Embedding
-
-If you have finished the training of the main model and decoders (used for visualization) for MVTec-AD, you could also choose to visualize the learned query embedding in the main model. 
-
-- **cd the experiment directory** by running `cd ./experiments/vis_query/`. 
-
-- **Visualize** by running (only support 1 GPU): 
-
-    (1) For slurm group:  `sh vis_query.sh #PARTITION`.
-
-    (2) For torch.distributed.launch:  `sh vis_query_torch.sh #CLASS_NAME`.
-
-    **Note**: for torch.distributed.launch, you should *visualize a specific class for one time*. 
-
-Some results are very interesting. The learned query embedding partly contains some features of normal samples. However, we ***did not*** fully figure out this and this part ***was not*** included in our paper. 
-
-![Image text](docs/query_bottle.jpg)
-![Image text](docs/query_capsule.jpg)
-
-## Acknowledgement
-
-We use some codes from repositories including [detr](https://github.com/facebookresearch/detr) and [efficientnet](https://github.com/lukemelas/EfficientNet-PyTorch). 
+- Original UniAD implementation: [UniAD GitHub Repository](https://github.com/zhiyuanyou/UniAD/tree/main)
+- [Any other acknowledgements or credits]
