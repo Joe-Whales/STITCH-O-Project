@@ -100,7 +100,7 @@ class FullModel(nn.Module):
         reconstructed = self.unet(features)
         return reconstructed, features
 
-def train_model(model: nn.Module, train_loader, num_epochs: int, learning_rate: float, weight_decay: float, device: str, model_path: str, checkpoint = None):
+def train_model(model: nn.Module, train_loader, num_epochs: int, learning_rate: float, weight_decay: float, device: str, model_path: str, checkpoint = None, val_loader = None):
     model.to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate, weight_decay=weight_decay)
@@ -119,7 +119,6 @@ def train_model(model: nn.Module, train_loader, num_epochs: int, learning_rate: 
         train_loss = 0.0
         
         print(f"\nEpoch {epoch+1}/{num_epochs}")
-        print("Training:")
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), leave=False)
         
         for i, input in progress_bar:
@@ -149,6 +148,9 @@ def train_model(model: nn.Module, train_loader, num_epochs: int, learning_rate: 
                 'scaler_state_dict': scaler.state_dict()
             }, model_path)
             print(f'Model saved at epoch {epoch+1}, with train loss: {train_loss:.4f}')
+        
+        if epoch % 10 == 0 and val_loader and epoch != 0:
+            validate(val_loader, model)
 
 def validate(val_loader, model, verbose=False):
     model.eval()
@@ -185,12 +187,12 @@ def create_and_run_model(cfg, device, logger = False, eval_mode = False):
     else:
         print(f'No saved model found at {cfg["model_path"]}. Training new model...')
 
+    val_loader = build_custom_dataloader(cfg["test"], training=False)
     if not eval_mode:
         train_loader = build_custom_dataloader(cfg["train"], training=True)
-        train_model(model, train_loader, cfg["num_epochs"], cfg["learning_rate"], cfg["weight_decay"], device, cfg["model_path"], checkpoint=checkpoint)
-    
-    test_loader = build_custom_dataloader(cfg["test"], training=False)
-    run_stats = validate(test_loader, model, verbose=False)
+        train_model(model, train_loader, cfg["num_epochs"], cfg["learning_rate"], cfg["weight_decay"], device, cfg["model_path"], checkpoint=checkpoint, val_loader=val_loader)
+    run_stats = validate(val_loader, model, verbose=False)
+    return run_stats
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train and evaluate the model.")
@@ -205,4 +207,5 @@ if __name__ == '__main__':
     with open(args.config_path, 'r') as f:
         cfg = yaml.safe_load(f)
     
-    create_and_run_model(cfg, device, False, True)
+    stats = create_and_run_model(cfg, device, False, False)
+    logging.info(f'Run stats: {stats}')

@@ -1,6 +1,6 @@
 # Model configuration
 model_path: baseline/baseline_model.pth
-num_epochs: 20
+num_epochs: 40 
 learning_rate: 0.001
 weight_decay: 0.0001
 
@@ -18,7 +18,7 @@ train:
 # Testing data configuration
 test:
   meta_file: ./chunks_scaled/metadata/test_metadata.json
-  batch_size: 1
-  workers: 8
+  batch_size: 1 # must always be 1 for test loader
+  workers: 2
   input_size: [224, 224]
   image_path: chunks_scaled
