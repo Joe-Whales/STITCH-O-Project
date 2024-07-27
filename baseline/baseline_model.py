@@ -149,7 +149,7 @@ def train_model(model: nn.Module, train_loader, num_epochs: int, learning_rate: 
             }, model_path)
             print(f'Model saved at epoch {epoch+1}, with train loss: {train_loss:.4f}')
         
-        if epoch % 10 == 0 and val_loader and epoch != 0:
+        if epoch % 20 == 0 and val_loader and epoch != 0:
             validate(val_loader, model)
 
 def validate(val_loader, model, verbose=False):
@@ -172,8 +172,8 @@ def validate(val_loader, model, verbose=False):
     results = {}
     for clsname in classes.keys():
         print(f"\nClass: {clsname}")
-        auroc, accuracy = performances(classes[clsname]["labels"], classes[clsname]["losses"], verbose=verbose)
-        results[clsname] = {"auroc": auroc, "accuracy": accuracy}
+        auroc, accuracy, threshold = performances(classes[clsname]["labels"], classes[clsname]["losses"], verbose=verbose)
+        results[clsname] = {"auroc": auroc, "accuracy": accuracy, "threshold": threshold}
     return results
 
 def create_and_run_model(cfg, device, logger = False, eval_mode = False):    
@@ -192,6 +192,11 @@ def create_and_run_model(cfg, device, logger = False, eval_mode = False):
         train_loader = build_custom_dataloader(cfg["train"], training=True)
         train_model(model, train_loader, cfg["num_epochs"], cfg["learning_rate"], cfg["weight_decay"], device, cfg["model_path"], checkpoint=checkpoint, val_loader=val_loader)
     run_stats = validate(val_loader, model, verbose=False)
+    thresholds = {}
+    for clsname in run_stats.keys():
+        thresholds[clsname] = run_stats[clsname]["threshold"]
+    torch.save(thresholds, 'baseline/inference_thresholds.pth')
+    print(f'Thresholds saved at inference_thresholds.pth')
     return run_stats
     
 if __name__ == '__main__':

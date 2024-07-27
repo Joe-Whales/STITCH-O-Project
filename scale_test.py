@@ -44,6 +44,7 @@ def local_percentile_scaling(input_raster, output_raster, chunk_size=256):
     
     print(f"Scaled raster saved to: {output_raster}")
 # Usage
-input_raster = 'Preprocessing\\data\\UOG_2057\\orthos\\raster.tif'
-output_raster = 'output_raster.tif'
+#input_raster = 'Preprocessing\\data\\UOG_2057\\orthos\\data-analysis\\reg.tif'
+input_raster = 'Blue_scaled.tif'
+output_raster = 'scaled_output.tif'
 local_percentile_scaling(input_raster, output_raster, chunk_size=256)

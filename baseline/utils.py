@@ -12,7 +12,7 @@ def get_metrics(labels, losses):
     precision = precision_score(labels, predicted_labels)
     recall = recall_score(labels, predicted_labels)
     f1 = f1_score(labels, predicted_labels)
-    return (accuracy, precision, recall, f1)
+    return (accuracy, precision, recall, f1, best_threshold)
 
 def plot_roc_curve(labels, losses, auroc):
     fpr, tpr, thresholds = roc_curve(labels, losses)
@@ -50,4 +50,4 @@ def performances(labels, losses, verbose=False):
         print(f"F1-score: {metrics[3]}")
         plot_roc_curve(labels, losses, auroc)
 
-    return auroc, metrics[0]
+    return auroc, metrics[0], metrics[4]
