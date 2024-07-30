@@ -15,7 +15,14 @@ downscaling:
 segmentation:
   lower_green: [25, 80, 40]  # Lower bound of green color in HSV
   upper_green: [85, 255, 200]  # Upper bound of green color in HSV
-  morph_kernel_size: 5  # Size of kernel for morphological operations
-  min_segment_ratio: 0.2  # Minimum size ratio for segments to keep
-  max_kernel_size: 40  # Maximum size for the closing kernel
-  kernel_step: 2  # Step size for increasing the kernel
+  morph_kernel_size: 3  # Size of kernel for morphological operations
+  min_segment_ratio: 0.02  # Minimum size ratio for segments to keep
+  min_ratio_step: 0.005
+  min_ratio_limit: 0.01
+  max_kernel_size: 30  # Maximum size for the closing kernel
+  kernel_step: 3  # Step size for increasing the kernel
+  buffer_size: 30  # Size of the buffer to add around each mask
+  large_segment_threshold: 0.05
+  border_width: 50
+  nodata_threshold: 15000
+  border_size: 100

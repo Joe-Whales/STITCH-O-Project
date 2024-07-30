@@ -8,6 +8,8 @@ import yaml
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+from scipy import ndimage
+import matplotlib.pyplot as plt
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -120,18 +122,42 @@ def segment_orchard(image, config):
     
     return mask
 
-def remove_small_segments(mask, min_size_ratio=0.2):
+def remove_small_segments(mask, config):
     total_area = mask.shape[0] * mask.shape[1]
-    min_size = int(total_area * min_size_ratio)
-    
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
-    
-    large_segments_mask = np.zeros_like(mask)
-    for label in range(1, num_labels):
-        if stats[label, cv2.CC_STAT_AREA] >= min_size:
-            large_segments_mask[labels == label] = 255
-    
-    return large_segments_mask
+    min_size_ratio = config['segmentation']['min_segment_ratio']
+    min_ratio_step = config['segmentation']['min_ratio_step']
+    min_ratio_limit = config['segmentation']['min_ratio_limit']
+
+    # Create structuring element for morphological operations
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+
+    while min_size_ratio >= min_ratio_limit:
+        min_size = int(total_area * min_size_ratio)
+        
+        # Fill holes in the mask
+        filled_mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        
+        # Find connected components
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(filled_mask, connectivity=8)
+        
+        # Create a new mask for large segments
+        large_segments_mask = np.zeros_like(mask, dtype=np.uint8)
+        
+        # Count segments larger than min_size
+        large_segment_count = 0
+        
+        for label in range(1, num_labels):  # Start from 1 to skip background
+            if stats[label, cv2.CC_STAT_AREA] >= min_size:
+                large_segments_mask[labels == label] = 255
+                large_segment_count += 1
+        
+        if large_segment_count >= 5 or min_size_ratio <= min_ratio_limit:
+            break
+        
+        min_size_ratio -= min_ratio_step
+
+    print(f"Final min_segment_ratio used: {min_size_ratio}")
+    return large_segments_mask, min_size_ratio
 
 def fill_holes_in_segments(mask):
     num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
@@ -144,20 +170,129 @@ def fill_holes_in_segments(mask):
     
     return filled_mask
 
-def adaptive_closing(mask, max_kernel_size=50, step=2):
-    closed_mask = mask.copy()
-    kernel = np.ones((3, 3), np.uint8)
+def adaptive_closing(mask, config):
+    max_kernel_size = config['segmentation']['max_kernel_size']
+    kernel_step = config['segmentation']['kernel_step']
+    large_segment_threshold = config['segmentation']['large_segment_threshold']
     
-    for size in range(3, max_kernel_size + 1, step):
+    closed_mask = mask.copy()
+    prev_num_labels = 0
+    
+    for size in range(3, max_kernel_size + 1, kernel_step):
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
         closed_mask = cv2.morphologyEx(closed_mask, cv2.MORPH_CLOSE, kernel)
         
-        # Check if the closing operation has connected all segments
-        num_labels, _ = cv2.connectedComponents(closed_mask)
-        if num_labels == 2:  # Background and one large segment
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(closed_mask)
+        
+        large_segments = np.sum(stats[1:, cv2.CC_STAT_AREA] > large_segment_threshold * mask.size)
+        if large_segments > 2 or num_labels == prev_num_labels:
             break
+        
+        prev_num_labels = num_labels
     
     return closed_mask
+
+def add_buffer(mask, buffer_size=10):
+    kernel = np.ones((buffer_size * 2 + 1, buffer_size * 2 + 1), np.uint8)
+    buffered_mask = cv2.dilate(mask, kernel, iterations=1)
+    return buffered_mask
+
+def has_large_segments(mask, min_size_ratio=0.1):
+    total_area = mask.shape[0] * mask.shape[1]
+    min_size = int(total_area * min_size_ratio)
+    
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    
+    for label in range(1, num_labels):  # Start from 1 to skip background
+        if stats[label, cv2.CC_STAT_AREA] >= min_size:
+            return True
+    
+    return False
+
+def trim_edges(mask):
+    # Find the bounding box of all non-zero pixels
+    rows = np.any(mask, axis=1)
+    cols = np.any(mask, axis=0)
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+
+    # Crop the mask to the bounding box
+    return mask[rmin:rmax+1, cmin:cmax+1], (rmin, rmax, cmin, cmax)
+
+def remove_border_segments(mask, border_width=10):
+    # Trim the edges
+    trimmed_mask, (rmin, rmax, cmin, cmax) = trim_edges(mask)
+    
+    height, width = trimmed_mask.shape
+
+    # Create a border mask
+    border_mask = np.zeros_like(trimmed_mask)
+    border_mask[:border_width, :] = 1
+    border_mask[-border_width:, :] = 1
+    border_mask[:, :border_width] = 1
+    border_mask[:, -border_width:] = 1
+
+    # Label the segments
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(trimmed_mask, connectivity=8)
+
+    # Create a new mask without border-touching segments
+    new_mask = np.zeros_like(trimmed_mask)
+    for label in range(1, num_labels):  # Start from 1 to skip background
+        segment = (labels == label)
+        if not np.any(segment & border_mask):
+            new_mask |= segment
+
+    # Create a full-sized mask with the same dimensions as the input
+    full_mask = np.zeros_like(mask)
+    full_mask[rmin:rmax+1, cmin:cmax+1] = new_mask
+
+    return full_mask
+
+def add_border(mask, border_size=50):
+    return ndimage.binary_dilation(mask, iterations=border_size)
+
+def remove_nodata_segments(mask, image, nodata_value=(0, 0, 0, 0), nodata_threshold=100, border_size=50, debug=False, debug_dir=None, unique_id=None):
+    # Ensure the image is in (height, width, channels) format
+    if image.shape[0] == 4:
+        image = image.transpose(1, 2, 0)
+
+    # Create a binary mask of no-data values
+    nodata_mask = np.all(image == nodata_value, axis=-1)
+
+    print(f"Shape of input mask: {mask.shape}")
+    print(f"Shape of image: {image.shape}")
+    print(f"Shape of nodata_mask: {nodata_mask.shape}")
+    print(f"Number of no-data pixels: {np.sum(nodata_mask)}")
+    print(f"Percentage of no-data pixels: {np.sum(nodata_mask) / nodata_mask.size * 100:.2f}%")
+
+
+    # Label the segments
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    print(f"Number of segments in input mask: {num_labels - 1}")  # Subtract 1 to exclude background
+
+    # Create a new mask without segments containing too many no-data values
+    new_mask = np.zeros_like(mask, dtype=bool)
+
+    for label in range(1, num_labels):
+        segment = labels == label
+        # Add border to the segment for checking
+        bordered_segment = add_border(segment, border_size)
+        filled_bordered_segment = ndimage.binary_fill_holes(bordered_segment)
+        
+        # Count no-data pixels in the filled bordered segment
+        nodata_count = np.sum(filled_bordered_segment & nodata_mask)
+        
+        if nodata_count <= nodata_threshold:
+            # Keep the original segment shape if it passes the check
+            new_mask |= segment
+            print(f"Keeping segment {label} with {nodata_count} no-data pixels")
+        else:
+            print(f"Removing segment {label} with {nodata_count} no-data pixels")
+
+    print(f"Number of segments in output mask: {np.max(cv2.connectedComponents(new_mask.astype(np.uint8))[1]) - 1}")
+
+
+    return new_mask.astype(np.uint8) * 255
 
 def process_single_file(input_file, output_dir, config, debug=False):
     # Generate a unique identifier based on the full path of the input file
@@ -171,15 +306,22 @@ def process_single_file(input_file, output_dir, config, debug=False):
     os.makedirs(os.path.dirname(downscaled_file), exist_ok=True)
     os.makedirs(os.path.dirname(mask_file), exist_ok=True)
 
-    # Downscale
-    downscaled_image, output_profile = downscale_tif(input_file, config)
+    # Check if downscaled file already exists
+    if os.path.exists(downscaled_file):
+        print(f"Downscaled image already exists at {downscaled_file}. Reading it...")
+        with rasterio.open(downscaled_file) as src:
+            downscaled_image = src.read()
+            output_profile = src.profile.copy()
+    else:
+        # Downscale
+        downscaled_image, output_profile = downscale_tif(input_file, config)
 
-    # Save downscaled image
-    with rasterio.open(downscaled_file, 'w', **output_profile) as dst:
-        dst.write(downscaled_image)
-    print(f"Downscaled image saved to {downscaled_file}")
+        # Save downscaled image
+        with rasterio.open(downscaled_file, 'w', **output_profile) as dst:
+            dst.write(downscaled_image)
+        print(f"Downscaled image saved to {downscaled_file}")
 
-    # Segment
+    # Rest of the function remains the same
     image = downscaled_image.transpose(1, 2, 0)
     initial_mask = segment_orchard(image, config)
 
@@ -189,28 +331,55 @@ def process_single_file(input_file, output_dir, config, debug=False):
         cv2.imwrite(os.path.join(debug_dir, f"1_initial_mask_{unique_id}.png"), initial_mask)
 
     # Apply adaptive closing
-    max_kernel_size = config['segmentation'].get('max_kernel_size', 50)
-    step = config['segmentation'].get('kernel_step', 2)
-    closed_mask = adaptive_closing(initial_mask, max_kernel_size, step)
+    closed_mask = adaptive_closing(initial_mask, config)
 
     if debug:
         cv2.imwrite(os.path.join(debug_dir, f"2_closed_mask_{unique_id}.png"), closed_mask)
 
-    min_segment_ratio = config['segmentation'].get('min_segment_ratio', 0.2)
-    large_segments_mask = remove_small_segments(closed_mask, min_size_ratio=min_segment_ratio)
+    # Trim edges and remove border segments
+    border_width = config['segmentation'].get('border_width', 10)
+    border_checked_mask = remove_border_segments(closed_mask, border_width)
 
     if debug:
-        cv2.imwrite(os.path.join(debug_dir, f"3_large_segments_{unique_id}.png"), large_segments_mask)
+        cv2.imwrite(os.path.join(debug_dir, f"3_border_checked_mask_{unique_id}.png"), border_checked_mask)
+    
+  # Remove small segments with dynamic threshold
+    large_segments_mask, final_ratio = remove_small_segments(border_checked_mask, config)
 
-    filled_mask = fill_holes_in_segments(large_segments_mask)
+    print(f"Final min_segment_ratio used: {final_ratio}")
 
     if debug:
-        cv2.imwrite(os.path.join(debug_dir, f"4_filled_mask_{unique_id}.png"), filled_mask)
+        cv2.imwrite(os.path.join(debug_dir, f"4_large_segments_{unique_id}.png"), large_segments_mask)
 
+
+    nodata_threshold = config['segmentation'].get('nodata_threshold', 100)
+    border_size = config['segmentation'].get('border_size', 50)
+    nodata_checked_mask = remove_nodata_segments(large_segments_mask, downscaled_image, nodata_value=(0, 0, 0, 0), 
+                                                 nodata_threshold=nodata_threshold,
+                                                 border_size=border_size,
+                                                 debug=debug, debug_dir=debug_dir, unique_id=unique_id)
+
+    if debug:
+        cv2.imwrite(os.path.join(debug_dir, f"5_nodata_checked_mask_{unique_id}.png"), nodata_checked_mask)
+
+
+    # Add buffer
+    buffer_size = config['segmentation'].get('buffer_size', 10)
+    buffered_mask = add_buffer(nodata_checked_mask, buffer_size)
+
+    if debug:
+        cv2.imwrite(os.path.join(debug_dir, f"6_buffered_mask_{unique_id}.png"), buffered_mask)
+
+    filled_mask = fill_holes_in_segments(buffered_mask)
+
+    if debug:
+        cv2.imwrite(os.path.join(debug_dir, f"7_filled_mask_{unique_id}.png"), filled_mask)
+
+    # Invert the mask
     final_mask = cv2.bitwise_not(filled_mask)
 
     if debug:
-        cv2.imwrite(os.path.join(debug_dir, f"5_final_mask_{unique_id}.png"), final_mask)
+        cv2.imwrite(os.path.join(debug_dir, f"8_final_mask_{unique_id}.png"), final_mask)
 
     mask_profile = output_profile.copy()
     mask_profile.update(dtype=rasterio.uint8, count=1, nodata=0)
