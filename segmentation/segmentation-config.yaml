@@ -1,0 +1,21 @@
+# Input file settings
+target_filename: "orthomosaic_visible.tif"
+root_dir: "segmentation"
+# output_file: "segmentation/1676.tif"
+# mask_output_file: "1676_mask.tif"
+
+# Downscaling settings
+downscaling:
+  target_size: [4064, 4064]
+  chunk_size: 4096
+  num_workers: 12  # 0 means use all available CPU cores
+  overlap: 128
+
+# Segmentation settings
+segmentation:
+  lower_green: [25, 80, 40]  # Lower bound of green color in HSV
+  upper_green: [85, 255, 200]  # Upper bound of green color in HSV
+  morph_kernel_size: 5  # Size of kernel for morphological operations
+  min_segment_ratio: 0.2  # Minimum size ratio for segments to keep
+  max_kernel_size: 40  # Maximum size for the closing kernel
+  kernel_step: 2  # Step size for increasing the kernel
