@@ -13,16 +13,30 @@ downscaling:
 
 # Segmentation settings
 segmentation:
-  lower_green: [25, 80, 40]  # Lower bound of green color in HSV
+  lower_green: [30, 40, 40]  # Lower bound of green color in HSV
   upper_green: [85, 255, 200]  # Upper bound of green color in HSV
   morph_kernel_size: 3  # Size of kernel for morphological operations
-  min_segment_ratio: 0.02  # Minimum size ratio for segments to keep
-  min_ratio_step: 0.005
-  min_ratio_limit: 0.01
+  min_segment_ratio: 0.014  # Minimum size ratio for segments to keep
+  min_circularity: 0.01  # Adjust this value based on your specific needs
+  min_ratio_step: 0.001
+  min_ratio_limit: 0.001
   max_kernel_size: 30  # Maximum size for the closing kernel
-  kernel_step: 3  # Step size for increasing the kernel
+  kernel_step: 6  # Step size for increasing the kernel
   buffer_size: 30  # Size of the buffer to add around each mask
-  large_segment_threshold: 0.05
+  large_segment_threshold: 0.03
   border_width: 50
   nodata_threshold: 15000
   border_size: 100
+  min_connection_width: 10
+  min_segment_size_percentage: 0.05  # 20% of the original segment size
+  nodata_value: [0, 0, 0, 0]
+  max_nodata_percentage: 0.15  # Maximum percentage of no-data pixels allowed in a segment
+  max_recursion_depth: 3  # Adjust this value as needed
+  small_hole_max_size: 0.0001  # 0.1% of total area, adjust as needed
+  min_segment_pixel_size: 50000
+  max_segments: 20
+  min_image_percentage: 0.005  # 0.5% of the total image size
+
+
+
+

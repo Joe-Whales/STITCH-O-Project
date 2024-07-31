@@ -11,6 +11,7 @@ easydict==1.13
 matplotlib==3.9.1
 tensorboardX==2.6.2.2
 rasterio==1.3.10
+scikit-image
 
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==2.3.1+cu118

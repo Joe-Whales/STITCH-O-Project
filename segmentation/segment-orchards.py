@@ -9,7 +9,10 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 from scipy import ndimage
-import matplotlib.pyplot as plt
+from skimage.morphology import skeletonize
+from scipy.ndimage import distance_transform_edt
+from skimage import measure
+
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -124,40 +127,42 @@ def segment_orchard(image, config):
 
 def remove_small_segments(mask, config):
     total_area = mask.shape[0] * mask.shape[1]
-    min_size_ratio = config['segmentation']['min_segment_ratio']
-    min_ratio_step = config['segmentation']['min_ratio_step']
-    min_ratio_limit = config['segmentation']['min_ratio_limit']
+    min_segment_pixels = int(total_area * config['segmentation']['min_segment_ratio'])
+    max_segment_pixels = int(total_area * 0.9)  # Prevent removing very large segments
+    min_circularity = config['segmentation'].get('min_circularity', 0.1)  # Adjust this threshold as needed
 
     # Create structuring element for morphological operations
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 
-    while min_size_ratio >= min_ratio_limit:
-        min_size = int(total_area * min_size_ratio)
+    # Fill holes in the mask
+    filled_mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    
+    # Find connected components
+    labels = measure.label(filled_mask, connectivity=2)
+    props = measure.regionprops(labels)
+    
+    # Create a new mask for acceptable segments
+    acceptable_segments_mask = np.zeros_like(mask, dtype=np.uint8)
+    
+    if not props:
+        return acceptable_segments_mask
+    
+    # Find the largest segment
+    largest_segment_area = max(prop.area for prop in props)
+    
+    # Count acceptable segments
+    acceptable_segment_count = 0
+    
+    for prop in props:
+        area = prop.area
+        perimeter = prop.perimeter
+        circularity = 4 * np.pi * area / (perimeter * perimeter) if perimeter > 0 else 0
         
-        # Fill holes in the mask
-        filled_mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-        
-        # Find connected components
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(filled_mask, connectivity=8)
-        
-        # Create a new mask for large segments
-        large_segments_mask = np.zeros_like(mask, dtype=np.uint8)
-        
-        # Count segments larger than min_size
-        large_segment_count = 0
-        
-        for label in range(1, num_labels):  # Start from 1 to skip background
-            if stats[label, cv2.CC_STAT_AREA] >= min_size:
-                large_segments_mask[labels == label] = 255
-                large_segment_count += 1
-        
-        if large_segment_count >= 5 or min_size_ratio <= min_ratio_limit:
-            break
-        
-        min_size_ratio -= min_ratio_step
-
-    print(f"Final min_segment_ratio used: {min_size_ratio}")
-    return large_segments_mask, min_size_ratio
+        if (area >= min_segment_pixels and area <= max_segment_pixels and circularity >= min_circularity) or area == largest_segment_area:
+            acceptable_segments_mask[labels == prop.label] = 255
+            acceptable_segment_count += 1
+            
+    return acceptable_segments_mask
 
 def fill_holes_in_segments(mask):
     num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
@@ -175,17 +180,36 @@ def adaptive_closing(mask, config):
     kernel_step = config['segmentation']['kernel_step']
     large_segment_threshold = config['segmentation']['large_segment_threshold']
     
+    # Initial check for large, unfilled segments
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask)
+    
+    # Calculate areas and thresholds
+    areas = stats[1:, cv2.CC_STAT_AREA]  # Exclude background
+    large_threshold = large_segment_threshold * mask.size
+    very_large_threshold = 2 * large_threshold
+    
+    # Count large and very large segments
+    large_segments = np.sum(areas > large_threshold * 1.5)
+    very_large_segments = np.sum(areas > very_large_threshold)
+    # If there are at least 2 large segments or 1 very large segment, return the original mask
+    if large_segments > 2 or very_large_segments >= 1:
+        print(f"Detected {large_segments} large segments and {very_large_segments} very large segments. Skipping adaptive closing.")
+        return mask
+    
     closed_mask = mask.copy()
     prev_num_labels = 0
     
-    for size in range(3, max_kernel_size + 1, kernel_step):
+    for size in range(4, max_kernel_size + 1, kernel_step):
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
         closed_mask = cv2.morphologyEx(closed_mask, cv2.MORPH_CLOSE, kernel)
         
         num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(closed_mask)
         
         large_segments = np.sum(stats[1:, cv2.CC_STAT_AREA] > large_segment_threshold * mask.size)
-        if large_segments > 2 or num_labels == prev_num_labels:
+
+        if large_segments > 2 or (num_labels - prev_num_labels) < 100:
+            print(f"Detected {large_segments} large segments or small increase in number of segments. Stopping at kernel size {size}.")
+            print(large_segment_threshold * mask.size)
             break
         
         prev_num_labels = num_labels
@@ -209,49 +233,119 @@ def has_large_segments(mask, min_size_ratio=0.1):
     
     return False
 
-def trim_edges(mask):
-    # Find the bounding box of all non-zero pixels
-    rows = np.any(mask, axis=1)
-    cols = np.any(mask, axis=0)
-    rmin, rmax = np.where(rows)[0][[0, -1]]
-    cmin, cmax = np.where(cols)[0][[0, -1]]
-
-    # Crop the mask to the bounding box
-    return mask[rmin:rmax+1, cmin:cmax+1], (rmin, rmax, cmin, cmax)
-
-def remove_border_segments(mask, border_width=10):
-    # Trim the edges
-    trimmed_mask, (rmin, rmax, cmin, cmax) = trim_edges(mask)
-    
-    height, width = trimmed_mask.shape
-
-    # Create a border mask
-    border_mask = np.zeros_like(trimmed_mask)
-    border_mask[:border_width, :] = 1
-    border_mask[-border_width:, :] = 1
-    border_mask[:, :border_width] = 1
-    border_mask[:, -border_width:] = 1
-
-    # Label the segments
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(trimmed_mask, connectivity=8)
-
-    # Create a new mask without border-touching segments
-    new_mask = np.zeros_like(trimmed_mask)
-    for label in range(1, num_labels):  # Start from 1 to skip background
-        segment = (labels == label)
-        if not np.any(segment & border_mask):
-            new_mask |= segment
-
-    # Create a full-sized mask with the same dimensions as the input
-    full_mask = np.zeros_like(mask)
-    full_mask[rmin:rmax+1, cmin:cmax+1] = new_mask
-
-    return full_mask
-
 def add_border(mask, border_size=50):
     return ndimage.binary_dilation(mask, iterations=border_size)
 
-def remove_nodata_segments(mask, image, nodata_value=(0, 0, 0, 0), nodata_threshold=100, border_size=50, debug=False, debug_dir=None, unique_id=None):
+def fill_small_holes(mask, config):
+    small_hole_max_size = config['segmentation'].get('small_hole_max_size', 0.001)  # 0.1% of total area by default
+    total_area = mask.shape[0] * mask.shape[1]
+    max_hole_size = int(total_area * small_hole_max_size)
+    
+    # Invert the mask to find holes
+    inverted_mask = np.logical_not(mask)
+    
+    # Label the holes
+    labeled_holes, num_holes = ndimage.label(inverted_mask)
+    
+    # Get sizes of holes
+    hole_sizes = np.bincount(labeled_holes.ravel())[1:]
+    
+    # Create a mask of holes to fill (those smaller than max_hole_size)
+    holes_to_fill = np.logical_and(labeled_holes > 0, 
+                                   np.take(hole_sizes, labeled_holes - 1) <= max_hole_size)
+    
+    # Fill the small holes
+    filled_mask = np.logical_or(mask, holes_to_fill)
+    
+    print(f"Number of holes filled: {np.sum(holes_to_fill > 0)}")
+    print(f"Largest hole filled: {np.max(hole_sizes[hole_sizes <= max_hole_size])} pixels")
+    
+    return filled_mask.astype(np.uint8) * 255
+
+def process_single_segment(segment, config, depth=0, max_depth=5):
+    max_connection_width = config['segmentation'].get('min_connection_width', 10)
+    min_segment_size_percentage = config['segmentation'].get('min_segment_size_percentage', 0.2)
+
+    original_segment = segment.copy()
+    total_pixels = np.sum(segment)
+
+    print(f"Processing segment at depth {depth} with {total_pixels} pixels.")
+
+    if depth >= max_depth:
+        return [segment]  # Return the segment as is if max depth is reached
+
+    for connection_width in range(3, max_connection_width + 1, 2):
+        kernel = np.ones((connection_width, connection_width), np.uint8)
+        
+        eroded = cv2.erode(segment, kernel, iterations=1)
+        num_labels, labels = cv2.connectedComponents(eroded)
+        
+        # Calculate min_segment_size based on the current eroded segment size
+        eroded_total_pixels = np.sum(eroded)
+        min_segment_size = int(eroded_total_pixels * min_segment_size_percentage)
+        
+        large_segments = [i for i in range(1, num_labels) if np.sum(labels == i) >= min_segment_size]
+        
+        print(f"Depth: {depth}, Connection width: {connection_width}, Large segments: {len(large_segments)}")
+        
+        if len(large_segments) > 1:
+            # If we found a separation, process each part recursively
+            processed_segments = []
+            for label in large_segments:
+                part = (labels == label).astype(np.uint8)
+                # Dilate the part to recover its original size, but don't let it grow beyond the original segment
+                dilated_part = cv2.dilate(part, kernel, iterations=1)
+                dilated_part = np.logical_and(dilated_part, original_segment).astype(np.uint8)
+                
+                # Recursively process this part
+                processed_segments.extend(process_single_segment(dilated_part, config, depth=depth+1, max_depth=max_depth))
+            
+            return processed_segments
+
+    # If no separation was found, return the original segment
+    return [segment]
+
+def separate_weakly_connected_segments(mask, config, debug=False, debug_dir=None, unique_id=None):
+    print(f"Input mask shape: {mask.shape}")
+    print(f"Number of non-zero pixels in input mask: {np.count_nonzero(mask)}")
+
+    num_labels, labels = cv2.connectedComponents(mask)
+    max_recursion_depth = config['segmentation'].get('max_recursion_depth', 5)
+
+    separated_mask = np.zeros_like(mask)
+    all_processed_segments = []
+
+    for label in range(1, num_labels):
+        segment = (labels == label).astype(np.uint8)
+        segment_size = np.sum(segment)
+        
+        processed_segments = process_single_segment(segment, config, depth=0, max_depth=max_recursion_depth)
+        all_processed_segments.extend(processed_segments)
+        
+        # Replace the original segment with its processed parts in the separated mask
+        for processed_segment in processed_segments:
+            separated_mask = np.maximum(separated_mask, processed_segment)
+
+    if debug:
+        debug_images = {
+            'original_mask': mask,
+            'separated_mask': separated_mask
+        }
+        
+        for name, image in debug_images.items():
+            cv2.imwrite(os.path.join(debug_dir, f"{name}_{unique_id}.png"), image)
+        
+        print(f"Number of segments before separation: {num_labels - 1}")
+        print(f"Number of segments after separation: {len(all_processed_segments)}")
+    
+    return separated_mask * 255, all_processed_segments
+
+def remove_nodata_segments(mask, image, config, debug=False, debug_dir=None, unique_id=None):
+    nodata_value = tuple(config['segmentation'].get('nodata_value', (0, 0, 0, 0)))
+    nodata_threshold = config['segmentation'].get('nodata_threshold', 100)
+    max_nodata_percentage = config['segmentation'].get('max_nodata_percentage', 0.15)
+    border_size = config['segmentation'].get('border_size', 50)
+
     # Ensure the image is in (height, width, channels) format
     if image.shape[0] == 4:
         image = image.transpose(1, 2, 0)
@@ -259,38 +353,37 @@ def remove_nodata_segments(mask, image, nodata_value=(0, 0, 0, 0), nodata_thresh
     # Create a binary mask of no-data values
     nodata_mask = np.all(image == nodata_value, axis=-1)
 
-    print(f"Shape of input mask: {mask.shape}")
-    print(f"Shape of image: {image.shape}")
-    print(f"Shape of nodata_mask: {nodata_mask.shape}")
-    print(f"Number of no-data pixels: {np.sum(nodata_mask)}")
-    print(f"Percentage of no-data pixels: {np.sum(nodata_mask) / nodata_mask.size * 100:.2f}%")
-
-
-    # Label the segments
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
-    print(f"Number of segments in input mask: {num_labels - 1}")  # Subtract 1 to exclude background
+    # Separate weakly connected segments
+    separated_mask, all_segments = separate_weakly_connected_segments(mask, config, debug, debug_dir, unique_id)
 
     # Create a new mask without segments containing too many no-data values
     new_mask = np.zeros_like(mask, dtype=bool)
 
-    for label in range(1, num_labels):
-        segment = labels == label
+    for i, segment in enumerate(all_segments):
         # Add border to the segment for checking
         bordered_segment = add_border(segment, border_size)
         filled_bordered_segment = ndimage.binary_fill_holes(bordered_segment)
         
         # Count no-data pixels in the filled bordered segment
         nodata_count = np.sum(filled_bordered_segment & nodata_mask)
+        total_pixels = np.sum(filled_bordered_segment)
+        nodata_ratio = nodata_count / total_pixels if total_pixels > 0 else 0
         
-        if nodata_count <= nodata_threshold:
-            # Keep the original segment shape if it passes the check
-            new_mask |= segment
-            print(f"Keeping segment {label} with {nodata_count} no-data pixels")
+        if nodata_count <= nodata_threshold and nodata_ratio <= max_nodata_percentage:
+            # Keep the original segment shape if it passes both checks
+            new_mask |= segment.astype(bool)
+            print(f"Keeping segment {i} with {nodata_count} no-data pixels ({nodata_ratio:.2%} of segment)")
         else:
-            print(f"Removing segment {label} with {nodata_count} no-data pixels")
+            print(f"Removing segment {i} with {nodata_count} no-data pixels ({nodata_ratio:.2%} of segment)")
 
     print(f"Number of segments in output mask: {np.max(cv2.connectedComponents(new_mask.astype(np.uint8))[1]) - 1}")
+    print(f"Number of non-zero pixels in output mask: {np.count_nonzero(new_mask)}")
 
+    if debug:
+        debug_mask = np.zeros((mask.shape[0], mask.shape[1], 3), dtype=np.uint8)
+        debug_mask[new_mask] = [0, 255, 0]  # Green for kept segments
+        debug_mask[mask & ~new_mask] = [0, 0, 255]  # Red for removed segments
+        cv2.imwrite(os.path.join(debug_dir, f"nodata_removal_debug_{unique_id}.png"), debug_mask)
 
     return new_mask.astype(np.uint8) * 255
 
@@ -330,42 +423,36 @@ def process_single_file(input_file, output_dir, config, debug=False):
         os.makedirs(debug_dir, exist_ok=True)
         cv2.imwrite(os.path.join(debug_dir, f"1_initial_mask_{unique_id}.png"), initial_mask)
 
+    filled_mask = fill_small_holes(initial_mask, config)
+
+    if debug:
+        cv2.imwrite(os.path.join(debug_dir, f"2_filled_mask_{unique_id}.png"), filled_mask)
+
     # Apply adaptive closing
-    closed_mask = adaptive_closing(initial_mask, config)
+    closed_mask = adaptive_closing(filled_mask, config)
 
     if debug:
-        cv2.imwrite(os.path.join(debug_dir, f"2_closed_mask_{unique_id}.png"), closed_mask)
+        cv2.imwrite(os.path.join(debug_dir, f"3_closed_mask_{unique_id}.png"), closed_mask)
 
-    # Trim edges and remove border segments
-    border_width = config['segmentation'].get('border_width', 10)
-    border_checked_mask = remove_border_segments(closed_mask, border_width)
-
-    if debug:
-        cv2.imwrite(os.path.join(debug_dir, f"3_border_checked_mask_{unique_id}.png"), border_checked_mask)
-    
   # Remove small segments with dynamic threshold
-    large_segments_mask, final_ratio = remove_small_segments(border_checked_mask, config)
-
-    print(f"Final min_segment_ratio used: {final_ratio}")
-
-    if debug:
-        cv2.imwrite(os.path.join(debug_dir, f"4_large_segments_{unique_id}.png"), large_segments_mask)
-
-
-    nodata_threshold = config['segmentation'].get('nodata_threshold', 100)
-    border_size = config['segmentation'].get('border_size', 50)
-    nodata_checked_mask = remove_nodata_segments(large_segments_mask, downscaled_image, nodata_value=(0, 0, 0, 0), 
-                                                 nodata_threshold=nodata_threshold,
-                                                 border_size=border_size,
-                                                 debug=debug, debug_dir=debug_dir, unique_id=unique_id)
+    large_segments_mask = remove_small_segments(closed_mask, config)
+    
+    filled_mask = fill_small_holes(large_segments_mask, config)
 
     if debug:
-        cv2.imwrite(os.path.join(debug_dir, f"5_nodata_checked_mask_{unique_id}.png"), nodata_checked_mask)
+        cv2.imwrite(os.path.join(debug_dir, f"4_large_segments_{unique_id}.png"), filled_mask)
+
+    nodata_checked_mask = remove_nodata_segments(filled_mask, downscaled_image, config)
+    
+    large_segments_mask_2 = remove_small_segments(nodata_checked_mask, config)
+
+    if debug:
+        cv2.imwrite(os.path.join(debug_dir, f"5_nodata_checked_mask_{unique_id}.png"), large_segments_mask_2)
 
 
     # Add buffer
     buffer_size = config['segmentation'].get('buffer_size', 10)
-    buffered_mask = add_buffer(nodata_checked_mask, buffer_size)
+    buffered_mask = add_buffer(large_segments_mask_2, buffer_size)
 
     if debug:
         cv2.imwrite(os.path.join(debug_dir, f"6_buffered_mask_{unique_id}.png"), buffered_mask)
