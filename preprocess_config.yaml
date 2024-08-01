@@ -4,6 +4,9 @@ files:
   -
     name: orthos/raster.tif
     dimensions: 1
+  -
+    name: orthos/data-analysis/reg.tif
+    dimensions: 1
 
 mask: .\Preprocessing\data\UOG_1996\mask_1996.tif
 reference: .\Preprocessing\data\UOG_1996\orthos\raster.tif
@@ -18,6 +21,9 @@ output_path: chunks/UOG_1676/
 files:
   -
     name: orthos/raster.tif
+    dimensions: 1
+  -
+    name: orthos/data-analysis/reg.tif
     dimensions: 1
 
 mask: .\Preprocessing\data\UOG_1676\mask_1676.tif
@@ -34,6 +40,9 @@ files:
   -
     name: orthos/raster.tif
     dimensions: 1
+  -
+    name: orthos/data-analysis/reg.tif
+    dimensions: 1
 
 mask: .\Preprocessing\data\UOG_2057\mask_2057.tif
 reference: .\Preprocessing\data\UOG_2057\orthos\raster.tif
@@ -48,6 +57,9 @@ output_path: chunks/UOG_1883/
 files:
   -
     name: orthos/raster.tif
+    dimensions: 1
+  -
+    name: orthos/data-analysis/reg.tif
     dimensions: 1
 
 mask: .\Preprocessing\data\UOG_1883\mask_1883.tif
@@ -64,25 +76,13 @@ files:
   -
     name: orthos/raster.tif
     dimensions: 1
+  -
+    name: orthos/data-analysis/reg.tif
+    dimensions: 1
 
 mask: .\Preprocessing\data\UOG_2223\mask_2223.tif
 reference: .\Preprocessing\data\UOG_2223\orthos\raster.tif
 scale_file: .\Preprocessing\data\UOG_2223\orthos\raster.tif
-chunk_size: 160
-chunk_overlap: 60
-anomaly_threshold: 0.8
-scale_ratio: 1.0
----
-path: .\Preprocessing\data\UOG_2227
-output_path: chunks/UOG_2227/
-files:
-  -
-    name: orthos/raster.tif
-    dimensions: 1
-
-mask: .\Preprocessing\data\UOG_2227\mask_2227.tif
-reference: .\Preprocessing\data\UOG_2227\orthos\raster.tif
-scale_file: .\Preprocessing\data\UOG_2227\orthos\raster.tif
 chunk_size: 160
 chunk_overlap: 60
 anomaly_threshold: 0.8
