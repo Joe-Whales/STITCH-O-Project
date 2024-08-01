@@ -93,7 +93,7 @@ Classification accuracy for all_case_1: 0.9878338278931751
 
 Due to the nature of the data and the fact that the case 1 anomalies get a lower anomaly score than normal images while case 2 anomalies get a higher anomaly score than normal images, the model requires two thresholds in order to accuractely classify the images. The thresholds are roughly 35 and below for case 1 anomalies and 60 and above for case 2 anomalies. These results were obtained using a 0.8 anomaly threshold in the preprocessing configuration file. 
 
-
+Baseline: 80% case 2, 100% case 1
 ## License
 
 [Include information about the project's license]

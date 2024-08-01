@@ -33,7 +33,7 @@ segmentation:
     max_kernel_size: 30  # Maximum size for the closing kernel
     kernel_step: 6  # Step size for increasing the kernel
     large_segment_threshold: 0.03  # Threshold for large segments
-    min_large_segments: 4  # Minimum number of large segments needed before stopping
+    min_large_segments: 2  # Minimum number of large segments needed before stopping
 
   # Buffer settings
   buffer:
@@ -41,11 +41,11 @@ segmentation:
 
   # Hole filling parameters
   hole_filling:
-    small_hole_max_size: 0.0004  # Maximum size of holes to fill (as a fraction of total area)
+    small_hole_max_size: 0.0003  # Maximum size of holes to fill (as a fraction of total area)
 
   # Segment separation parameters
   segment_separation:
-    max_connection_width: 10  # Maximum width of connections to separate
+    max_connection_width: 15  # Maximum width of connections to separate
     min_segment_size_percentage: 0.05  # Minimum size of separated segments (as a fraction of original)
     max_recursion_depth: 3  # Maximum recursion depth for segment separation
 

@@ -82,7 +82,10 @@ class CustomDataset(Dataset):
             }
         )
 
-        input["clsname"] = meta.get("clsname", filename.split("/")[-4])
+        if meta.get("clsname", None):
+            input["clsname"] = meta["clsname"]
+        else:
+            input["clsname"] = filename.split("/")[-4]
 
         # Split the channels
         normal_image = image[..., 0]
