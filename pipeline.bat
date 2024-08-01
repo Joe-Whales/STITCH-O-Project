@@ -8,7 +8,7 @@
 @REM pause
 @echo off
 python .\Preprocessing\chunker.py preprocess_config.yaml
-python ./Preprocessing/process_chunks.py chunks chunks_scaled
-python .\Preprocessing\generate_metadata.py chunks_scaled -t
+python ./Preprocessing/process_chunks.py chunks chunks_scaled_2
+python .\Preprocessing\generate_metadata.py chunks_scaled_2 -t
 @REM python .\UniAD\train_val.py --config train_config.yaml
 pause 
