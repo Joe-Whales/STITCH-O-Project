@@ -3,7 +3,7 @@ from __future__ import division
 import json
 import logging
 
-from torch import from_numpy, clamp
+from torch import from_numpy, cat
 from torch.nn import Module as nn
 import numpy as np
 import torchvision.transforms as transforms
@@ -123,7 +123,15 @@ class CustomDataset(BaseDataset):
                 raise ValueError("Labels must be [None, 0, 1]!")
 
         # convert image to tensor and permute
-        image = from_numpy(image).float().permute(2, 0, 1)
+        image = from_numpy(image).float()
+
+        # Check the number of channels
+        if len(image.shape) == 2:  # Single channel
+            image = image.unsqueeze(0)
+        elif len(image.shape) == 3:
+            image = image.permute(2, 0, 1)
+        else:
+            raise ValueError(f"Unexpected image shape: {image.shape}")
 
         mask = Image.fromarray(mask, "L")
 
@@ -131,19 +139,20 @@ class CustomDataset(BaseDataset):
             image, mask = self.transform_fn(image, mask)
         if self.colorjitter_fn:
             image = self.colorjitter_fn(image)
-        
+
         mask = transforms.ToTensor()(mask)
-        if "mean" in meta and "std" in meta:
-            normalize_fn = transforms.Normalize(mean=meta["mean"], std=meta["std"])
-        # else:
-        normalize_fn = transforms.Normalize(mean=[0.485], std=[0.229])
-        
+        normalize_fn = transforms.Normalize(mean=[0.485, 0.456, 0.406][:image.size(0)], std=[0.229, 0.224, 0.225][:image.size(0)])
+
         image = normalize_fn(image)
-        
-        # duplicate channels of image to 3
+
+        # Handle different channel counts
         if image.size(0) == 1:
             image = image.expand(3, -1, -1)
-        
+        elif image.size(0) == 2:
+            image = cat([image, image[0].unsqueeze(0)], dim=0)
+        elif image.size(0) > 3:
+            image = image[:3]
+
         input.update({"image": image, "mask": mask})
 
         return input
