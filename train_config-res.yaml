@@ -21,9 +21,9 @@ dataset:
     meta_file: ./chunks_scaled/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
-  batch_size: 64
+  batch_size: 32
   normals: [0]
-  workers: 8 # number of workers of dataloader for each process
+  workers: 10 # number of workers of dataloader for each process
 
 
 criterion:
@@ -36,13 +36,13 @@ trainer:
   max_epoch: 250
   clip_max_norm: 0.1
   val_freq_epoch: 10
-  print_freq_step: 240
-  tb_freq_step: 200
+  print_freq_step: 200
+  tb_freq_step: 500
   lr_scheduler:
     type: StepLR
     kwargs:
-      step_size: 150
-      gamma: 0.3
+      step_size: 100
+      gamma: 0.5
   optimizer:
     type: AdamW
     kwargs:
@@ -73,13 +73,13 @@ frozen_layers: [backbone]
 
 net:
     - name: backbone
-      type: models.backbones.efficientnet_b4
+      type: models.backbones.resnet50
       frozen: True
       kwargs:
         pretrained: True
         # select outlayers from: resnet [1,2,3,4], efficientnet [1,2,3,4,5]
         # empirically, for industrial: resnet [1,2,3] or [2,3], efficientnet [1,2,3,4] or [2,3,4]
-        outlayers: [1,2,3,4]
+        outlayers: [1,2,3]
     - name: neck
       prev: backbone
       type: models.necks.MFCN
@@ -95,12 +95,12 @@ net:
         num_encoder_layers: 4
         num_decoder_layers: 4
         dim_feedforward: 1024
-        dropout: 0.1
+        dropout: 0.0
         activation: relu
         normalize_before: False
         feature_jitter:
-          scale: 00.0
-          prob: 1.0
+          scale: 0.0
+          prob: 0.0
         neighbor_mask:
           neighbor_size: [7,7]
           mask: [True, True, True] # whether use mask in [enc, dec1, dec2]
