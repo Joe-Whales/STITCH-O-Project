@@ -203,10 +203,18 @@ def train_model(model: nn.Module, train_loader, val_loader, cfg, device: str, ch
                 scheduler.step(overall_accuracy)
             elif cfg['scheduler']['name'] == 'step':
                 scheduler.step()
-            elif cfg['scheduler']['name'] == 'none' and overall_accuracy > 0.85:
-                # set optimizer learning rate to 0.5 of the original learning rate
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = 0.1 * param_group['lr']
+            elif cfg['scheduler']['name'] == 'none':
+                drop_count = 0
+                if 0.9 > overall_accuracy > 0.85 and drop_count < 2:
+                    # set optimizer learning rate to 0.5 of the original learning rate
+                    for param_group in optimizer.param_groups:
+                        param_group['lr'] = 0.7 * param_group['lr']
+                    drop_count += 1
+                elif overall_accuracy > 0.9 and drop_count < 4:
+                    # set optimizer learning rate to 0.1 of the original learning rate
+                    for param_group in optimizer.param_groups:
+                        param_group['lr'] = 0.5 * param_group['lr']
+                    drop_count += 1
 
     return best_accuracy, best_thresholds
 
