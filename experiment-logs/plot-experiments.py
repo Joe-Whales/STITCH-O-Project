@@ -2,6 +2,7 @@ import os
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 def process_csv_files(directory):
@@ -19,7 +20,7 @@ def process_csv_files(directory):
     return experiments
 
 def plot_experiment_results(experiment_name, results):
-    fig = plt.figure(figsize=(15, 30))  # Adjusted figure height
+    fig = plt.figure(figsize=(15, 20))  # Adjusted figure height
     
     # Create 7 subplot spaces
     gs = fig.add_gridspec(7, 1)
@@ -35,7 +36,7 @@ def plot_experiment_results(experiment_name, results):
     
     titles = ['Case 1 AUROC', 'Case 2 AUROC', 'Average AUROC']
     columns = ['all_case_1_AUROC', 'all_case_2_AUROC', 'average_AUROC']
-    colors = plt.cm.get_cmap('Set1')(np.linspace(0, 1, len(results)))
+    colors = plt.colormaps['Set1'](np.linspace(0, 1, len(results)))
 
     for i, (ax, title, column) in enumerate(zip(axes, titles, columns)):
         min_val, max_val = float('inf'), float('-inf')
@@ -64,8 +65,8 @@ def plot_experiment_results(experiment_name, results):
         ax.set_ylim(max(0, min_val - 0.05 * y_range), min(1, max_val + 0.05 * y_range))
         
         ax.set_title(title, fontsize=18, pad=20)
-        ax.set_ylabel('AUROC', fontsize=14, labelpad=10)
-        ax.legend(fontsize=12, loc='lower right')
+        ax.set_ylabel('AUROC', fontsize=26, labelpad=10)
+        ax.legend(fontsize=22, loc='lower right')
         ax.grid(True, linestyle='--', alpha=0.7)
         
         # Improve tick label readability
