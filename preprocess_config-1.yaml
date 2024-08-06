@@ -9,9 +9,9 @@ files:
 mask: .\Preprocessing\data\UOG_1676\mask_1676.tif
 reference: .\Preprocessing\data\UOG_1676\orthos\raster.tif
 scale_file: .\Preprocessing\data\UOG_1676\orthos\raster.tif
-chunk_size: 160
-chunk_overlap: 60
-anomaly_threshold: 0.8
+chunk_size: 120
+chunk_overlap: 40
+anomaly_threshold: 0.80
 scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_2057
@@ -25,9 +25,9 @@ files:
 mask: .\Preprocessing\data\UOG_2057\mask_2057.tif
 reference: .\Preprocessing\data\UOG_2057\orthos\raster.tif
 scale_file: .\Preprocessing\data\UOG_2057\orthos\raster.tif
-chunk_size: 160
-chunk_overlap: 60
-anomaly_threshold: 0.8
+chunk_size: 120
+chunk_overlap: 40
+anomaly_threshold: 0.80
 scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_1883
@@ -41,9 +41,9 @@ files:
 mask: .\Preprocessing\data\UOG_1883\mask_1883.tif
 reference: .\Preprocessing\data\UOG_1883\orthos\raster.tif
 scale_file: .\Preprocessing\data\UOG_1883\orthos\raster.tif
-chunk_size: 160
-chunk_overlap: 60
-anomaly_threshold: 0.8
+chunk_size: 120
+chunk_overlap: 40
+anomaly_threshold: 0.80
 scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_2223
@@ -57,9 +57,9 @@ files:
 mask: .\Preprocessing\data\UOG_2223\mask_2223.tif
 reference: .\Preprocessing\data\UOG_2223\orthos\raster.tif
 scale_file: .\Preprocessing\data\UOG_2223\orthos\raster.tif
-chunk_size: 160
-chunk_overlap: 60
-anomaly_threshold: 0.8
+chunk_size: 120
+chunk_overlap: 40
+anomaly_threshold: 0.80
 scale_ratio: 1.0
 ---
 path: .\Preprocessing\data\UOG_1996
@@ -72,7 +72,7 @@ files:
 mask: .\Preprocessing\data\UOG_1996\mask_1996.tif
 reference: .\Preprocessing\data\UOG_1996\orthos\raster.tif
 scale_file: .\Preprocessing\data\UOG_1996\orthos\raster.tif
-chunk_size: 160
-chunk_overlap: 60
-anomaly_threshold: 0.8
+chunk_size: 120
+chunk_overlap: 40
+anomaly_threshold: 0.80
 scale_ratio: 1.0

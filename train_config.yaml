@@ -8,17 +8,17 @@ dataset:
   image_reader:
     type: npy
     kwargs:
-      image_dir: ./chunks_scaled/
+      image_dir: ./chunks_scaled_3/
 
   train:
-    meta_file: ./chunks_scaled/metadata/train_metadata.json
+    meta_file: ./chunks_scaled_3/metadata/train_metadata.json
     rebalance: False
     hflip: True
     vflip: True
     rotate: True
 
   test:
-    meta_file: ./chunks_scaled/metadata/test_metadata.json
+    meta_file: ./chunks_scaled_3/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
   batch_size: 64
@@ -41,7 +41,7 @@ trainer:
   lr_scheduler:
     type: StepLR
     kwargs:
-      step_size: 150
+      step_size: 100
       gamma: 0.3
   optimizer:
     type: AdamW
@@ -79,7 +79,7 @@ net:
         pretrained: True
         # select outlayers from: resnet [1,2,3,4], efficientnet [1,2,3,4,5]
         # empirically, for industrial: resnet [1,2,3] or [2,3], efficientnet [1,2,3,4] or [2,3,4]
-        outlayers: [1,2,3,4]
+        outlayers: [2,3,4]
     - name: neck
       prev: backbone
       type: models.necks.MFCN
@@ -99,8 +99,8 @@ net:
         activation: relu
         normalize_before: False
         feature_jitter:
-          scale: 00.0
-          prob: 1.0
+          scale: 0.0
+          prob: 0.0
         neighbor_mask:
           neighbor_size: [7,7]
           mask: [True, True, True] # whether use mask in [enc, dec1, dec2]

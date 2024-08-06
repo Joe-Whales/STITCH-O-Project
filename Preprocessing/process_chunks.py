@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import concurrent.futures
-import multiprocessing
 import random
 import shutil
 import argparse
