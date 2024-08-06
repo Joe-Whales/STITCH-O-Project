@@ -188,7 +188,7 @@ def adaptive_closing(mask, config):
     closed_mask = mask.copy()
     prev_num_labels = 0
     
-    for size in range(4, max_kernel_size + 1, kernel_step):
+    for size in range(3, max_kernel_size + 1, kernel_step):
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
         closed_mask = cv2.morphologyEx(closed_mask, cv2.MORPH_CLOSE, kernel)
         

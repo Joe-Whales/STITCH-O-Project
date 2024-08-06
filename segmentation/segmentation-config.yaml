@@ -13,12 +13,12 @@ downscaling:
 segmentation:
   # Color thresholds for initial segmentation
   color_thresholds:
-    lower_green: [30, 40, 40]  # Lower bound of green color in HSV
-    upper_green: [85, 255, 200]  # Upper bound of green color in HSV
+    lower_green: [35, 40, 40]  # Lower bound of green color in HSV
+    upper_green: [60, 255, 180]  # Upper bound of green color in HSV
 
   # Morphological operations
   morphology:
-    kernel_size: 3  # Size of kernel for morphological operations
+    kernel_size: 3 # Size of kernel for morphological operations
 
   # Size thresholds for segment filtering
   size_thresholds:
@@ -33,7 +33,7 @@ segmentation:
     max_kernel_size: 30  # Maximum size for the closing kernel
     kernel_step: 6  # Step size for increasing the kernel
     large_segment_threshold: 0.03  # Threshold for large segments
-    min_large_segments: 2  # Minimum number of large segments needed before stopping
+    min_large_segments: 3  # Minimum number of large segments needed before stopping
 
   # Buffer settings
   buffer:
@@ -46,7 +46,7 @@ segmentation:
   # Segment separation parameters
   segment_separation:
     max_connection_width: 15  # Maximum width of connections to separate
-    min_segment_size_percentage: 0.05  # Minimum size of separated segments (as a fraction of original)
+    min_segment_size_percentage: 0.03  # Minimum size of separated segments (as a fraction of original)
     max_recursion_depth: 3  # Maximum recursion depth for segment separation
 
   # No-data removal parameters
