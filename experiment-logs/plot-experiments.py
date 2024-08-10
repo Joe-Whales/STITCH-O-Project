@@ -5,6 +5,62 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 
+def load_specific_files(root_dir):
+    specific_files = {
+        'Baseline': os.path.join(root_dir, 'UniAD vs Baseline Model', 'Baseline.csv'),
+        'UniAD': [
+            os.path.join(root_dir, 'UniAD vs Baseline Model', 'UniAD.csv'),
+            os.path.join(root_dir, 'ResNet50 vs EfficientNet-b4', 'UniAD-EfficientNet-b4.csv'),
+            os.path.join(root_dir, 'Multi-Layer vs Single-Layer', 'UniAD-Single-Layer.csv'),
+            os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-dropout-jitter.csv')
+        ],
+        'UniAD (ResNet50)': os.path.join(root_dir, 'ResNet50 vs EfficientNet-b4', 'UniAD-ResNet50.csv'),
+        'UniAD Multi-Layer': os.path.join(root_dir, 'Multi-Layer vs Single-Layer', 'UniAD-Multi-Layer.csv'),
+        'UniAD (dropout, no jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-dropout-no-jitter.csv'),
+        'UniAD (jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-jitter.csv'),
+        'UniAD (no jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-no-jitter.csv')
+    }
+    
+    data = {}
+    for model, file_paths in specific_files.items():
+        if isinstance(file_paths, list):
+            # For UniAD, we'll use the first file that exists
+            for file_path in file_paths:
+                if os.path.exists(file_path):
+                    data[model] = pd.read_csv(file_path)
+                    break
+        else:
+            if os.path.exists(file_paths):
+                data[model] = pd.read_csv(file_paths)
+            else:
+                print(f"Warning: File not found - {file_paths}")
+    
+    return data
+
+def plot_overall_comparison(data):
+    for case in ['Case 1', 'Case 2']:
+        plt.figure(figsize=(15, 10))
+        column = f'all_case_{case[-1]}_AUROC'
+        
+        for model, df in data.items():
+            if column in df.columns:
+                plt.plot(df['Epoch'], df[column], label=model, linewidth=2)
+                
+                # Mark the highest point
+                max_idx = df[column].idxmax()
+                plt.plot(df['Epoch'][max_idx], df[column][max_idx], 'o', markersize=8)
+                plt.annotate(f'{df[column][max_idx]:.3f}', 
+                             (df['Epoch'][max_idx], df[column][max_idx]),
+                             xytext=(5, 5), textcoords='offset points', fontsize=8)
+        
+        plt.title(f'{case} AUROC Comparison Across All Models', fontsize=20)
+        plt.xlabel('Epoch', fontsize=14)
+        plt.ylabel('AUROC', fontsize=14)
+        plt.legend(fontsize=10, loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        plt.show()
+
 def process_csv_files(directory):
     experiments = {}
     for root, dirs, files in os.walk(directory):
@@ -83,12 +139,20 @@ def plot_experiment_results(experiment_name, results):
     plt.show()
     
 def main(root_dir):
+    # Load specific files for overall comparison
+    specific_data = load_specific_files(root_dir)
+    
+    # Plot overall comparison graphs
+    plot_overall_comparison(specific_data)
+
+    # Process all CSV files for individual experiment plots
     experiments = process_csv_files(root_dir)
 
     if not experiments:
         print("No experiments with CSV files found in the specified directory or its subdirectories.")
         return
 
+    # Plot individual experiment results
     for experiment_name, results in experiments.items():
         plot_experiment_results(experiment_name, results)
 
