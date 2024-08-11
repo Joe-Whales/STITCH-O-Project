@@ -35,7 +35,7 @@ criterion:
 trainer:
   max_epoch: 250
   clip_max_norm: 0.1
-  val_freq_epoch: 10
+  val_freq_epoch: 5
   print_freq_step: 240
   tb_freq_step: 200
   lr_scheduler:
@@ -59,7 +59,7 @@ saver:
 
 evaluator:
   save_dir: result_eval_temp
-  key_metric: mean_std_auc
+  key_metric: mean_mean_auc
   metrics:
     auc:
       - name: std
@@ -102,7 +102,7 @@ net:
           scale: 10.0
           prob: 0.0
         neighbor_mask:
-          neighbor_size: [5,5]
+          neighbor_size: [7,7]
           mask: [True, True, True] # whether use mask in [enc, dec1, dec2]
         save_recon: False
         initializer:

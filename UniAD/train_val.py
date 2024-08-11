@@ -126,7 +126,7 @@ def main():
         lr_scheduler.step()
 
         if (epoch + 1) % config.trainer.val_freq_epoch == 0:
-            ret_metrics = validate(val_loader, model)
+            ret_metrics, thresholds = validate(val_loader, model)
             if rank == 0:
                 ret_key_metric = ret_metrics[key_metric]
                 is_best = ret_key_metric >= best_metric
@@ -139,6 +139,7 @@ def main():
                         "state_dict": model.state_dict(),
                         "best_metric": best_metric,
                         "optimizer": optimizer.state_dict(),
+                        "thresholds": thresholds,
                     },
                     is_best,
                     config,
@@ -277,11 +278,11 @@ def validate(val_loader, model, verbose=False):
         fileinfos, preds, masks = merge_together(config.evaluator.eval_dir)
         shutil.rmtree(config.evaluator.eval_dir)
         # evaluate, log & vis
-        ret_metrics = performances(fileinfos, preds, masks, config.evaluator.metrics, verbose)
+        ret_metrics, thresholds = performances(fileinfos, preds, masks, config.evaluator.metrics, verbose)
         log_metrics(ret_metrics, config.evaluator.metrics)
         
     model.train()
-    return ret_metrics
+    return ret_metrics, thresholds
 
 
 if __name__ == "__main__":

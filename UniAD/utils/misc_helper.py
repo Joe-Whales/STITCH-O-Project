@@ -92,7 +92,7 @@ def save_checkpoint(state, is_best, config):
         )
 
 
-def load_state(path, model, optimizer=None):
+def load_state(path, model, optimizer=None, inference=False):
 
     rank =0#  dist.get_rank()
 
@@ -142,9 +142,12 @@ def load_state(path, model, optimizer=None):
                     )
                 )
             return best_metric, epoch
+        if inference:
+            return checkpoint["thresholds"]
     else:
         if rank == 0:
             print("=> no checkpoint found at '{}'".format(path))
+    
 
 
 def set_random_seed(seed=233, reproduce=False):
