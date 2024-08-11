@@ -253,6 +253,7 @@ eval_lookup_table = {
 
 def performances(fileinfos, preds, masks, config, verbose=False):
     ret_metrics = {}
+    thresholds = {}
     clsnames = set([fileinfo["clsname"] for fileinfo in fileinfos])
     for clsname in clsnames:
         preds_cls = []
@@ -282,6 +283,9 @@ def performances(fileinfos, preds, masks, config, verbose=False):
                     
                 auc = eval_method.eval_auc()
                 ret_metrics["{}_{}_auc".format(clsname, evalname)] = auc
+                if evalname == "mean":
+                    thresholds[clsname] = optimal_threshold
+                    
                 print(f'Accuracy for {clsname}: {metrics["accuracy"]}')
 
     if config.get("auc", None):
@@ -294,7 +298,7 @@ def performances(fileinfos, preds, masks, config, verbose=False):
             mean_auc = np.mean(np.array(evalvalues))
             ret_metrics["{}_{}_auc".format("mean", evalname)] = mean_auc
 
-    return ret_metrics
+    return ret_metrics, thresholds
 
 
 def log_metrics(ret_metrics, config):
