@@ -8,17 +8,17 @@ dataset:
   image_reader:
     type: npy
     kwargs:
-      image_dir: ./chunks_scaled/
+      image_dir: ./chunks_inference/
 
   train:
-    meta_file: ./chunks_scaled/metadata/train_metadata.json
+    meta_file: ./chunks_inference/metadata/train_metadata.json
     rebalance: False
     hflip: True
     vflip: True
     rotate: True
 
   test:
-    meta_file: ./chunks_scaled/metadata/test_metadata.json
+    meta_file: ./chunks_inference/metadata/test_metadata.json
 
   input_size: [224,224] # [h,w]
   batch_size: 64

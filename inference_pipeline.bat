@@ -1,14 +1,9 @@
-#!/bin/bash
+@echo off
 
-# Check if the correct number of arguments is provided
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <input_directory> <model_path>"
-    exit 1
-fi
+python segmentation/segment-orchards.py segmentation\segmentation-config.yaml Preprocessing/data
+python .\Preprocessing\chunker.py preprocess_config_inference.yaml
+python ./Preprocessing/process_chunks.py chunks chunks_inference
+python .\Preprocessing\generate_metadata.py chunks_inference -t
+python .\UniAD\run_inference.py --config inference_config.yaml
 
-DATA_DIR=$1
-MODEL_PATH=$2
-@REM DATA_DIR="Preprocessing/data"
-
-python segmentation/segment-orchards.py segmentation\segmentation-config.yaml "$DATA_DIR"
-
+pause

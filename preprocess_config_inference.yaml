@@ -1,0 +1,78 @@
+
+path: .\Preprocessing\data\UOG_1676
+output_path: chunks/UOG_1676/
+files:
+  -
+    name: orthos/raster.tif
+    dimensions: 1
+
+mask: .\Preprocessing\segmentation\masks\seg_mask_UOG_1676_orthos_export-data_orthomosaic_visible_tif.tif
+reference: .\Preprocessing\data\UOG_1676\orthos\raster.tif
+scale_file: .\Preprocessing\data\UOG_1676\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
+anomaly_threshold: 0.80
+scale_ratio: 0.5
+---
+path: .\Preprocessing\data\UOG_2057
+output_path: chunks/UOG_2057/
+files:
+  -
+    name: orthos/raster.tif
+    dimensions: 1
+
+
+mask: .\Preprocessing\segmentation\masks\seg_mask_UOG_2057_orthos_export-data_orthomosaic_visible_tif.tif
+reference: .\Preprocessing\data\UOG_2057\orthos\raster.tif
+scale_file: .\Preprocessing\data\UOG_2057\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
+anomaly_threshold: 0.80
+scale_ratio: 1.0
+---
+path: .\Preprocessing\data\UOG_1883
+output_path: chunks/UOG_1883/
+files:
+  -
+    name: orthos/raster.tif
+    dimensions: 1
+
+
+mask: .\Preprocessing\segmentation\masks\seg_mask_UOG_1883_orthos_export-data_orthomosaic_visible_tif.tif
+reference: .\Preprocessing\data\UOG_1883\orthos\raster.tif
+scale_file: .\Preprocessing\data\UOG_1883\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
+anomaly_threshold: 0.80
+scale_ratio: 1.0
+---
+path: .\Preprocessing\data\UOG_2223
+output_path: chunks/UOG_2223/
+files:
+  -
+    name: orthos/raster.tif
+    dimensions: 1
+
+
+mask: .\Preprocessing\segmentation\masks\seg_mask_UOG_2223_orthos_export-data_orthomosaic_visible_tif.tif
+reference: .\Preprocessing\data\UOG_2223\orthos\raster.tif
+scale_file: .\Preprocessing\data\UOG_2223\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
+anomaly_threshold: 0.80
+scale_ratio: 1.0
+---
+path: .\Preprocessing\data\UOG_1996
+output_path: chunks/UOG_1996/
+files:
+  -
+    name: orthos/raster.tif
+    dimensions: 1
+
+mask: .\Preprocessing\segmentation\masks\seg_mask_UOG_1996_orthos_export-data_orthomosaic_visible_tif.tif
+reference: .\Preprocessing\data\UOG_1996\orthos\raster.tif
+scale_file: .\Preprocessing\data\UOG_1996\orthos\raster.tif
+chunk_size: 160
+chunk_overlap: 60
+anomaly_threshold: 0.80
+scale_ratio: 1.0

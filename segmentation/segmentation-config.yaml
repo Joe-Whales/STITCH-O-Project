@@ -37,7 +37,7 @@ segmentation:
 
   # Buffer settings
   buffer:
-    size: 30  # Size of the buffer to add around each mask
+    size: 10  # Size of the buffer to add around each mask
 
   # Hole filling parameters
   hole_filling:
@@ -45,8 +45,8 @@ segmentation:
 
   # Segment separation parameters
   segment_separation:
-    max_connection_width: 15  # Maximum width of connections to separate
-    min_segment_size_percentage: 0.03  # Minimum size of separated segments (as a fraction of original)
+    max_connection_width: 100  # Maximum width of connections to separate
+    min_segment_size_percentage: 0.002  # Minimum size of separated segments (as a fraction of original)
     max_recursion_depth: 3  # Maximum recursion depth for segment separation
 
   # No-data removal parameters

@@ -341,13 +341,16 @@ def process_single_file(input_file, output_dir, config, debug=False):
     buffer_size = config['segmentation']['buffer']['size']
     buffered_mask = add_buffer(large_segments_mask_2, buffer_size)
     filled_mask = fill_holes_in_segments(buffered_mask)
-    final_mask = cv2.bitwise_not(filled_mask)
+
+    # Change: Invert the mask and set non-segmented areas to nodata
+    nodata_value = config['segmentation'].get('nodata_value', -999)
+    final_mask = np.where(filled_mask == 255, nodata_value, 0)
 
     # Save final mask
     mask_profile = output_profile.copy()
-    mask_profile.update(dtype=rasterio.uint8, count=1, nodata=0)
+    mask_profile.update(dtype=rasterio.int16, count=1, nodata=nodata_value)
     with rasterio.open(mask_file, 'w', **mask_profile) as dst:
-        dst.write(final_mask, 1)
+        dst.write(final_mask.astype(rasterio.int16), 1)
 
     # Debug output
     if debug:

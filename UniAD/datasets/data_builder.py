@@ -23,12 +23,15 @@ def build(cfg, training, distributed):
     return data_loader
 
 
-def build_dataloader(cfg_dataset, distributed=True):
+def build_dataloader(cfg_dataset, distributed=True, inference=False):
     train_loader = None
     if cfg_dataset.get("train", None):
         train_loader = build(cfg_dataset, training=True, distributed=distributed)
     print("train loader len", len(train_loader))
 
+    if inference:
+        return train_loader
+    
     test_loader = None
     if cfg_dataset.get("test", None):
         test_loader = build(cfg_dataset, training=False, distributed=distributed)
