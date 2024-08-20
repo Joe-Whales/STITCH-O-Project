@@ -13,8 +13,8 @@ downscaling:
 segmentation:
   # Color thresholds for initial segmentation
   color_thresholds:
-    lower_green: [35, 40, 40]  # Lower bound of green color in HSV
-    upper_green: [60, 255, 180]  # Upper bound of green color in HSV
+    lower_green: [30, 40, 40]  # Lower bound of green color in HSV
+    upper_green: [80, 255, 200]  # Upper bound of green color in HSV
 
   # Morphological operations
   morphology:

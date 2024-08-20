@@ -1,0 +1,26 @@
+input:
+  target_filename: orthomosaic_visible.tif
+
+downscaling:
+  target_size: [4096, 4096]
+  chunk_size: 4096
+  overlap: 128
+  num_workers: 12
+
+segmentation:
+  sam_checkpoint: "sam-segmentation/sam_vit_l_0b3195.pth"
+  model_type: "vit_l"
+  pred_iou_thresh: 0.12
+  stability_score_thresh: 0.88
+  box_nms_thresh: 0.4
+  crop_nms_thresh: 0.4
+  sam_target_size: [1024, 1024]
+  min_segment_size: 10000
+  nodata_value: [0, 0, 0, 0]
+  max_nodata_percentage: 0.01
+  border_size: 20
+  color_thresholds:
+    lower_green: [40, 40, 40]
+    upper_green: [80, 255, 255]
+  morphology:
+    kernel_size: 5
