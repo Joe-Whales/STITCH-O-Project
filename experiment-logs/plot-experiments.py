@@ -18,7 +18,8 @@ def load_specific_files(root_dir):
         'UniAD Multi-Layer': os.path.join(root_dir, 'Multi-Layer vs Single-Layer', 'UniAD-Multi-Layer.csv'),
         'UniAD (dropout, no jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-dropout-no-jitter.csv'),
         'UniAD (jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-jitter.csv'),
-        'UniAD (no jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-no-jitter.csv')
+        'UniAD (no jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-no-jitter.csv'),
+        'UniAD Large Chunks': os.path.join(root_dir, 'Small vs Large chunks', 'Large chunks UniAD.csv')
     }
     
     data = {}
@@ -51,11 +52,11 @@ def plot_overall_comparison(data):
                 plt.plot(df['Epoch'][max_idx], df[column][max_idx], 'o', markersize=8)
                 plt.annotate(f'{df[column][max_idx]:.3f}', 
                              (df['Epoch'][max_idx], df[column][max_idx]),
-                             xytext=(5, 5), textcoords='offset points', fontsize=8)
+                             xytext=(5, 5), textcoords='offset points', fontsize=12)
         
-        plt.title(f'{case} AUROC Comparison Across All Models', fontsize=20)
-        plt.xlabel('Epoch', fontsize=14)
-        plt.ylabel('AUROC', fontsize=14)
+        plt.title(f'{case} AUROC Comparison Across All Models', fontsize=24)
+        plt.xlabel('Epoch', fontsize=18)
+        plt.ylabel('AUROC', fontsize=18)
         plt.legend(fontsize=10, loc='center left', bbox_to_anchor=(1, 0.5))
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
