@@ -23,7 +23,7 @@ dataset:
   input_size: [224,224] # [h,w]
   batch_size: 64
   normals: [0]
-  workers: 4 # number of workers of dataloader for each process
+  workers: 8 # number of workers of dataloader for each process
 
 
 criterion:
