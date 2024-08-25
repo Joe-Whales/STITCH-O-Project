@@ -11,10 +11,11 @@ import multiprocessing
 import torch
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 from PIL import Image
-from scipy import ndimage
+from scipy import ndimage, stats
 import time
 import concurrent.futures
-from functools import partial
+from matplotlib import pyplot as plt
+import random
 
 def load_config(config_path):
     """Load configuration from YAML file."""
@@ -159,32 +160,38 @@ def further_downscale_for_sam(image, target_size):
     
     return resized_3d
 
-def remove_small_segments(masks, min_size, image_shape):
+def remove_small_segments(masks, min_size, image_shape, image, pixel_value_threshold):
     """Remove small segments from multiple masks and combine them."""    
     combined_mask = np.zeros(image_shape, dtype=bool)
-    
+    total_pixels = image_shape[0] * image_shape[1]
     for mask in masks:
         segment = mask['segmentation']
-        if np.sum(segment) >= min_size:
-            combined_mask = np.logical_or(combined_mask, segment)
-    
+        if (np.sum(segment)/total_pixels >= min_size) or (np.sum(segment) >= 12000):
+            segmented_pixels = image[segment]
+            avg_pixel_value = np.mean(segmented_pixels)/255
+            # Check if the segment is a dam
+            num_pixels = np.sum(segment)
+            if (avg_pixel_value >= pixel_value_threshold) or num_pixels/total_pixels >= 0.3:
+                # corrode the mask
+                kernel = np.ones((3, 3), np.uint8)
+                segment = cv2.erode(segment.astype(np.uint8), kernel, iterations=1).astype(bool)
+                combined_mask = np.logical_or(combined_mask, segment)         
     return combined_mask
 
 def process_segment(args):
     label, segment, nodata_mask, max_nodata_percentage, kernel = args
+    if np.sum(segment) < 20000:
+        return label
     dilated_segment = ndimage.binary_dilation(segment, structure=kernel)
     nodata_count = np.sum(dilated_segment & nodata_mask)
     segment_size = np.sum(dilated_segment)
-    if (segment_size > 0 and (nodata_count / segment_size) > max_nodata_percentage) or segment_size < 10000:
+    if (segment_size > 0 and (nodata_count / segment_size) > max_nodata_percentage):
         return label
-    print(f"Segment {label}: {segment_size} pixels, {nodata_count} nodata pixels, {nodata_count*100 / segment_size:.2f}% nodata percentage")
     return None
 
 def remove_nodata_segments(mask, rgb_image, nodata_value, max_nodata_percentage, border_size, num_threads=4):
     """Remove segments with high percentage of no-data pixels."""
     labeled, num_features = ndimage.label(mask)
-    print(f"Total segments: {num_features}")
-    
     if rgb_image.shape[0] == 4:
         rgb_image = rgb_image.transpose(1, 2, 0)
     
@@ -193,7 +200,7 @@ def remove_nodata_segments(mask, rgb_image, nodata_value, max_nodata_percentage,
     
     # Create morphological kernel
     kernel = np.ones((border_size, border_size), dtype=bool)
-    
+        
     # Prepare arguments for multiprocessing
     segments = [labeled == i for i in range(1, num_features + 1)]
     args = [(i+1, segment, nodata_mask, max_nodata_percentage, kernel) for i, segment in enumerate(segments)]
@@ -208,6 +215,34 @@ def remove_nodata_segments(mask, rgb_image, nodata_value, max_nodata_percentage,
     
     return mask
 
+def show_masks(image, masks, random_colors=True):
+    plt.figure(figsize=(12, 12))
+    plt.imshow(image)
+    
+    # Create a color map
+    if random_colors:
+        color_map = plt.cm.get_cmap('tab20')  # You can try other colormaps like 'Set1', 'Set2', 'Set3', etc.
+    else:
+        color_map = plt.cm.get_cmap('viridis')  # A sequential colormap
+    
+    # Create a single mask that combines all individual masks
+    combined_mask = np.zeros(image.shape[:2] + (4,), dtype=np.float32)
+    
+    for i, mask in enumerate(masks):
+        mask_image = mask['segmentation']
+        if random_colors:
+            color = color_map(random.random())
+        else:
+            color = color_map(i / len(masks))
+        
+        mask_color = np.concatenate([color[:3], [1.0]])  # RGBA
+        combined_mask[mask_image] = mask_color
+    
+    plt.imshow(combined_mask)
+    plt.title(f"Number of segments: {len(masks)}")
+    plt.axis('off')
+    plt.show()
+
 def segment_image(image, mask_generator, config):
     """Apply the SAM model to the image and process the resulting masks."""    
     # Ensure image is in the correct format for SAM (3D, RGB)
@@ -216,11 +251,41 @@ def segment_image(image, mask_generator, config):
     
     # Generate masks
     masks = mask_generator.generate(image)
-    
+    #show_masks(image, masks, random_colors=True)
     # Remove small segments and combine masks
     min_segment_size = config['segmentation']['min_segment_size']
-    combined_mask = remove_small_segments(masks, min_segment_size, image.shape[:2])
+    combined_mask = remove_small_segments(masks, min_segment_size, image.shape[:2], image, config['segmentation']['pixel_value_threshold'])
     return combined_mask
+
+def keep_largest_segment(mask):
+    """Keep only the largest connected segment in the mask."""
+    labeled, num_features = ndimage.label(mask)
+    if num_features > 1:
+        sizes = ndimage.sum(mask, labeled, range(1, num_features + 1))
+        largest_label = np.argmax(sizes) + 1
+        largest_mask = (labeled == largest_label)
+        return largest_mask
+    else:
+        return mask
+
+def detect_and_remove_dams(mask, image, outlier_threshold=1.5):
+    """Detect potential dams and remove them from the mask."""
+    labeled_mask, num_features = ndimage.label(mask)
+    
+    segment_stats = []
+    for i in range(1, num_features + 1):
+        segment = (labeled_mask == i)
+        segment_pixels = image[segment]
+        std_rgb = np.std(segment_pixels, axis=0)
+        segment_stats.append(std_rgb)
+    
+    segment_stats = np.array(segment_stats)
+    z_scores = stats.zscore(segment_stats, axis=0)
+    outliers = np.any(z_scores < -outlier_threshold, axis=1)
+    for i, is_outlier in enumerate(outliers):
+        if is_outlier:
+            mask[labeled_mask == (i + 1)] = False
+    return mask
 
 def process_single_file(input_file, output_dir, config, mask_generator):
     """Process a single input file."""
@@ -250,13 +315,12 @@ def process_single_file(input_file, output_dir, config, mask_generator):
 
     # Create threshold mask
     threshold_mask = create_threshold_mask(image, config)
-
     # Further downscale for SAM
     sam_image = further_downscale_for_sam(threshold_mask, config['segmentation']['sam_target_size'])
 
     # Apply segmentation model
     segmentation_mask = segment_image(sam_image, mask_generator, config)
-
+    
     # Upscale the mask to match the downscaled RGB image
     upscaled_mask = cv2.resize(segmentation_mask.astype(np.uint8), (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST)
 
@@ -264,24 +328,27 @@ def process_single_file(input_file, output_dir, config, mask_generator):
     nodata_value = np.array(config['segmentation']['nodata_value'])
     max_nodata_percentage = config['segmentation']['max_nodata_percentage']
     border_size = config['segmentation'].get('border_size', 3)
-    final_mask = remove_nodata_segments(upscaled_mask, image, nodata_value, max_nodata_percentage, border_size)
-    final_mask = np.logical_not(final_mask)
     
-    temp = Image.fromarray(final_mask.astype(np.uint8) * 255)
-    temp.save("mask.png")
+    cleaned_mask = remove_nodata_segments(upscaled_mask, image, nodata_value, max_nodata_percentage, border_size)
+    
+    # Detect and remove dams
+    outlier_threshold = config['segmentation']['outlier_threshold']
+    final_mask = detect_and_remove_dams(cleaned_mask, image, outlier_threshold)
+    
+    final_mask = keep_largest_segment(np.logical_not(final_mask))
+    
+    final_mask = np.where(final_mask == 1, 0, -999)
 
     # Save final mask
     mask_profile = output_profile.copy()
-    mask_profile.update(dtype=rasterio.uint8, count=1, nodata=0)
+    mask_profile.update(dtype=rasterio.float32, count=1, nodata=-999)
     with rasterio.open(mask_file, 'w', **mask_profile) as dst:
-        dst.write(final_mask.astype(rasterio.uint8), 1)
+        dst.write(final_mask.astype(rasterio.float32), 1)
 
     return True, downscaled_image, output_profile
 
 def main(config_file, root_dir):
     """Main function to process all files."""
-    print("Starting main process...")
-    start_time = time.time()
     config = load_config(config_file)
     config['root_dir'] = root_dir
     target_filename = config.get('input', {}).get('target_filename', 'orthomosaic_visible.tif')

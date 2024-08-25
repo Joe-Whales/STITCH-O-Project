@@ -99,8 +99,8 @@ net:
         activation: relu
         normalize_before: False
         feature_jitter:
-          scale: 10.0
-          prob: 0.0
+          scale: 20.0
+          prob: 1.0
         neighbor_mask:
           neighbor_size: [7,7]
           mask: [True, True, True] # whether use mask in [enc, dec1, dec2]

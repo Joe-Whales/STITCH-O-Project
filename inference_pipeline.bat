@@ -1,6 +1,7 @@
 @echo off
 
-python segmentation/segment-orchards.py segmentation\segmentation-config.yaml Preprocessing/data
+@REM python segmentation/segment-orchards.py segmentation\segmentation-config.yaml Preprocessing/data
+@REM python sam-segmentation/segmentation.py sam-segmentation/segmentation-config.yaml Preprocessing/data/
 python .\Preprocessing\chunker.py preprocess_config_inference.yaml
 python ./Preprocessing/process_chunks.py chunks chunks_inference
 python .\Preprocessing\generate_metadata.py chunks_inference -t
