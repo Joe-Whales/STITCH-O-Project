@@ -71,12 +71,9 @@ def classify_orchard(orchard_data):
     if anomalous_percentage > 50:
         case_1_score += 1
         case_2_score += 1
-    if score_range > 40:
-        case_1_score += 1
-        case_2_score += 1
 
     # Classification
-    classification = "Anomalous" if case_1_score + case_2_score > 2 else "Normal"
+    classification = "Anomalous" if case_1_score + case_2_score > 1 else "Normal"
 
     # Insights
     insights = []
