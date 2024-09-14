@@ -8,12 +8,7 @@ import numpy as np
 def load_specific_files(root_dir):
     specific_files = {
         'Baseline': os.path.join(root_dir, 'UniAD vs Baseline Model', 'Baseline.csv'),
-        'UniAD': [
-            os.path.join(root_dir, 'UniAD vs Baseline Model', 'UniAD.csv'),
-            os.path.join(root_dir, 'ResNet50 vs EfficientNet-b4', 'UniAD-EfficientNet-b4.csv'),
-            os.path.join(root_dir, 'Multi-Layer vs Single-Layer', 'UniAD-Single-Layer.csv'),
-            os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-dropout-jitter.csv')
-        ],
+        'UniAD (dropout and jitter)':os.path.join(root_dir, 'UniAD vs Baseline Model', 'UniAD.csv'),
         'UniAD (ResNet50)': os.path.join(root_dir, 'ResNet50 vs EfficientNet-b4', 'UniAD-ResNet50.csv'),
         'UniAD Multi-Layer': os.path.join(root_dir, 'Multi-Layer vs Single-Layer', 'UniAD-Multi-Layer.csv'),
         'UniAD (dropout, no jitter)': os.path.join(root_dir, 'Jitter and Dropout', 'UniAD-dropout-no-jitter.csv'),
