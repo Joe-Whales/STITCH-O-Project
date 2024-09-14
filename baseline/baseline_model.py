@@ -14,6 +14,20 @@ from custom_dataset import build_custom_dataloader
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
 
 class FeatureExtractor(nn.Module):
+    """
+    A feature extraction module that uses pre-trained models to extract features from input images.
+
+    Args:
+        model_name (str): The name of the pre-trained model to use. Default is 'efficientnet_b4'.
+
+    Attributes:
+        model_name (str): The name of the pre-trained model being used.
+        features (nn.Sequential): The feature extraction layers of the chosen model.
+        out_channels (int): The number of output channels from the feature extractor.
+
+    Raises:
+        ValueError: If an unsupported model name is provided.
+    """
     def __init__(self, model_name='efficientnet_b4'):
         super(FeatureExtractor, self).__init__()
         self.model_name = model_name
@@ -49,6 +63,16 @@ class FeatureExtractor(nn.Module):
         return self.features(x)
 
 class DoubleConv(nn.Module):
+    """
+    A double convolutional block used in the U-Net architecture.
+
+    Args:
+        in_ch (int): Number of input channels.
+        out_ch (int): Number of output channels.
+
+    Attributes:
+        conv (nn.Sequential): A sequence of two convolutional layers with batch normalization and ReLU activation.
+    """
     def __init__(self, in_ch: int, out_ch: int):
         super(DoubleConv, self).__init__()
         self.conv = nn.Sequential(
@@ -64,6 +88,20 @@ class DoubleConv(nn.Module):
         return self.conv(x)
 
 class UNet(nn.Module):
+    """
+    A U-Net architecture for image segmentation or feature reconstruction.
+
+    Args:
+        in_ch (int): Number of input channels. Default is 56.
+        out_ch (int): Number of output channels. Default is 56.
+
+    Attributes:
+        enc1, enc2, enc3, enc4 (DoubleConv): Encoder blocks.
+        dec3, dec2, dec1 (DoubleConv): Decoder blocks.
+        out_conv (nn.Conv2d): Output convolutional layer.
+        pool (nn.MaxPool2d): Max pooling layer.
+        upsample3, upsample2, upsample1 (nn.ConvTranspose2d): Upsampling layers.
+    """
     def __init__(self, in_ch: int = 56, out_ch: int = 56):
         super(UNet, self).__init__()
 
@@ -100,6 +138,16 @@ class UNet(nn.Module):
         return self.out_conv(d1)
 
 class BaselineModel(nn.Module):
+    """
+    A baseline model combining a feature extractor and a U-Net for feature reconstruction.
+
+    Args:
+        feature_extractor (str): The name of the feature extractor to use. Default is 'efficientnet_b4'.
+
+    Attributes:
+        feature_extractor (FeatureExtractor): The feature extraction module.
+        unet (UNet): The U-Net module for feature reconstruction.
+    """
     def __init__(self, feature_extractor='efficientnet_b4'):
         super(BaselineModel, self).__init__()
         self.feature_extractor = FeatureExtractor(feature_extractor)
@@ -112,6 +160,19 @@ class BaselineModel(nn.Module):
         return reconstructed, features
 
 def get_scheduler(optimizer, cfg):
+    """
+    Create a learning rate scheduler based on the configuration.
+
+    Args:
+        optimizer (torch.optim.Optimizer): The optimizer to use with the scheduler.
+        cfg (dict): A configuration dictionary containing scheduler settings.
+
+    Returns:
+        torch.optim.lr_scheduler._LRScheduler or None: The created scheduler, or None if 'none' is specified.
+
+    Raises:
+        ValueError: If an unsupported scheduler name is provided.
+    """
     scheduler_cfg = cfg['scheduler']
     if scheduler_cfg['name'] == 'step':
         scheduler = StepLR(optimizer, step_size=scheduler_cfg['step']['step_size'], gamma=scheduler_cfg['step']['gamma'])
@@ -124,6 +185,20 @@ def get_scheduler(optimizer, cfg):
     return scheduler
 
 def train_model(model: nn.Module, train_loader, val_loader, cfg, device: str, checkpoint = None):
+    """
+    Train the model using the provided data loaders and configuration.
+
+    Args:
+        model (nn.Module): The model to train.
+        train_loader (DataLoader): DataLoader for training data.
+        val_loader (DataLoader): DataLoader for validation data.
+        cfg (dict): Configuration dictionary containing training parameters.
+        device (str): The device to use for training ('cuda' or 'cpu').
+        checkpoint (dict, optional): A checkpoint to resume training from.
+
+    Returns:
+        tuple: A tuple containing the best validation accuracy and best thresholds.
+    """
     model.to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=cfg['learning_rate'], weight_decay=cfg['weight_decay'])
@@ -219,6 +294,17 @@ def train_model(model: nn.Module, train_loader, val_loader, cfg, device: str, ch
     return best_accuracy, best_thresholds
 
 def validate(val_loader, model, verbose=False):
+    """
+    Validate the model using the provided validation data loader.
+
+    Args:
+        val_loader (DataLoader): DataLoader for validation data.
+        model (nn.Module): The model to validate.
+        verbose (bool): Whether to print detailed performance metrics. Default is False.
+
+    Returns:
+        dict: A dictionary containing validation results for each class.
+    """
     model.eval()
     criterion = nn.MSELoss()
     classes = {}
@@ -242,7 +328,18 @@ def validate(val_loader, model, verbose=False):
         results[clsname] = {"auroc": auroc, "accuracy": accuracy, "threshold": threshold}
     return results
 
-def create_and_run_model(cfg, device, logger = False, eval_mode = False):    
+def create_and_run_model(cfg, device, eval_mode = False):
+    """
+    Create a model, load a checkpoint if available, and either train or evaluate the model.
+
+    Args:
+        cfg (dict): Configuration dictionary containing model and data parameters.
+        device (str): The device to use for computations ('cuda' or 'cpu').
+        eval_mode (bool): Whether to run in evaluation mode. Default is False.
+
+    Returns:
+        dict: A dictionary containing the best thresholds for each class.
+    """
     checkpoint = None
     model = BaselineModel(feature_extractor=cfg["feature_extractor"]).to(device)
 

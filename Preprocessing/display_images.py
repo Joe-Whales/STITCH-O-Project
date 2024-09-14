@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import argparse
-from PIL import Image
 
 def load_and_display_images(orchard_path, num_images=36):
     train_path = os.path.join(orchard_path, 'train', 'normal')

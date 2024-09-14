@@ -25,6 +25,23 @@ parser.add_argument("--config", default="./train_config.yaml")
 parser.add_argument("-e", "--evaluate", action="store_true")
 
 def main():
+    """
+    Main function to run the UniAD Framework.
+
+    This function performs the following tasks:
+    1. Parse command-line arguments and load configuration
+    2. Set up logging and TensorBoard
+    3. Initialize the model, optimizer, and learning rate scheduler
+    4. Load checkpoints if resuming training
+    5. Build data loaders for training and validation
+    6. Run the training loop, including periodic validation and model saving
+
+    Global variables:
+        args (argparse.Namespace): Command-line arguments
+        config (EasyDict): Configuration dictionary
+        key_metric (str): Key metric for model evaluation
+        best_metric (float): Best value of the key metric achieved so far
+    """
     global args, config, key_metric, best_metric
     args = parser.parse_args()
 
@@ -157,6 +174,30 @@ def train_one_epoch(
     criterion,
     scaler=None,
 ):
+    """
+    Train the model for one epoch.
+
+    Args:
+        train_loader (DataLoader): DataLoader for training data
+        model (nn.Module): The neural network model
+        optimizer (Optimizer): The optimizer for training
+        lr_scheduler (LRScheduler): Learning rate scheduler
+        epoch (int): Current epoch number
+        start_iter (int): Starting iteration number
+        tb_logger (SummaryWriter): TensorBoard logger
+        criterion (dict): Dictionary of loss functions
+        scaler (GradScaler, optional): Gradient scaler for mixed precision training
+
+    This function performs the following steps for each batch:
+    1. Forward pass
+    2. Loss calculation
+    3. Backward pass with gradient scaling
+    4. Optimizer step with gradient unscaling
+    5. Logging of training statistics
+
+    Returns:
+        None
+    """
 
     batch_time = AverageMeter(config.trainer.print_freq_step)
     data_time = AverageMeter(config.trainer.print_freq_step)
@@ -231,6 +272,26 @@ def train_one_epoch(
 
 
 def validate(val_loader, model, verbose=False):
+    """
+    Validate the model on the validation dataset.
+
+    Args:
+        val_loader (DataLoader): DataLoader for validation data
+        model (nn.Module): The neural network model
+        verbose (bool, optional): If True, print additional information during validation
+
+    This function performs the following steps:
+    1. Set model to evaluation mode
+    2. Perform forward pass on validation data
+    3. Calculate loss
+    4. Dump outputs for later analysis
+    5. Merge results and calculate performance metrics
+
+    Returns:
+        tuple: A tuple containing:
+            - ret_metrics (dict): Dictionary of calculated metrics
+            - thresholds (dict): Dictionary of calculated thresholds
+    """
     batch_time = AverageMeter(0)
     losses = AverageMeter(0)
 

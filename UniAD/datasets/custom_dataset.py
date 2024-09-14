@@ -21,7 +21,24 @@ logger = logging.getLogger("global_logger")
 
 
 def build_custom_dataloader(cfg, training, distributed=True):
+    """
+    Build a custom DataLoader for training or testing.
 
+    Args:
+        cfg (dict): Configuration dictionary containing dataloader settings.
+        training (bool): Whether the dataloader is for training or testing.
+        distributed (bool, optional): Whether to use distributed sampling. Defaults to True.
+
+    Returns:
+        DataLoader: A PyTorch DataLoader object configured according to the input parameters.
+
+    This function performs the following steps:
+    1. Build an image reader based on the configuration.
+    2. Set up appropriate data transforms based on whether it's for training or testing.
+    3. Create a CustomDataset instance.
+    4. Set up a sampler (distributed or random) based on the 'distributed' parameter.
+    5. Create and return a DataLoader with the specified configuration.
+    """
     image_reader = build_image_reader(cfg.image_reader)
 
     if training:
@@ -64,14 +81,32 @@ def build_custom_dataloader(cfg, training, distributed=True):
 
 
 class CustomDataset(BaseDataset):
-    def __init__(
-        self,
-        image_reader,
-        meta_file,
-        training,
-        transform_fn,
-        colorjitter_fn=None,
-    ):
+    """
+    A custom dataset class for handling image data with associated metadata.
+
+    Attributes:
+        image_reader (callable): Function to read images.
+        meta_file (str): Path to the metadata file.
+        training (bool): Whether the dataset is for training.
+        transform_fn (callable): Function to apply transformations to images and masks.
+        colorjitter_fn (callable, optional): Function to apply color jittering.
+        metas (list): List of metadata for each item in the dataset.
+
+    Methods:
+        __len__(): Return the number of items in the dataset.
+        __getitem__(index): Get a single item from the dataset.
+    """
+    def __init__(self, image_reader, meta_file, training, transform_fn, colorjitter_fn=None):
+        """
+        Initialize the CustomDataset.
+
+        Args:
+            image_reader (callable): Function to read images.
+            meta_file (str): Path to the metadata file.
+            training (bool): Whether the dataset is for training.
+            transform_fn (callable): Function to apply transformations to images and masks.
+            colorjitter_fn (callable, optional): Function to apply color jittering.
+        """
         self.image_reader = image_reader
         self.meta_file = meta_file
         self.training = training
@@ -86,9 +121,38 @@ class CustomDataset(BaseDataset):
                 self.metas.append(meta)
 
     def __len__(self):
+        """
+        Get the number of items in the dataset.
+
+        Returns:
+            int: The number of items in the dataset.
+        """
         return len(self.metas)
 
     def __getitem__(self, index):
+        """
+        Get a single item from the dataset.
+
+        Args:
+            index (int): Index of the item to retrieve.
+
+        Returns:
+            dict: A dictionary containing the item data, including:
+                - filename (str): The name of the image file.
+                - height (int): The height of the image.
+                - width (int): The width of the image.
+                - label (int): The label of the image.
+                - clsname (str): The class name of the image.
+                - image (Tensor): The preprocessed image tensor.
+                - mask (Tensor): The preprocessed mask tensor.
+
+        This method performs the following steps:
+        1. Load metadata for the item.
+        2. Read the image and create or read the corresponding mask.
+        3. Apply transformations to the image and mask.
+        4. Normalize the image.
+        5. Handle different channel counts in the image.
+        """
         input = {}
         meta = self.metas[index]
 

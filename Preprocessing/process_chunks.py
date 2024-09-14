@@ -4,15 +4,34 @@ import concurrent.futures
 import random
 import shutil
 import argparse
-from typing import List, Tuple
+from typing import Tuple
 
 def is_orchard_folder(folder_path: str) -> bool:
-    """Check if the folder is an orchard folder containing required subfolders."""
+    """
+    Check if the folder is an orchard folder containing required subfolders.
+
+    Args:
+        folder_path (str): Path to the folder to check.
+
+    Returns:
+        bool: True if the folder contains all required subfolders, False otherwise.
+    """
     required_folders = ['normal', 'case_1', 'case_2', 'case_3']
     return all(os.path.isdir(os.path.join(folder_path, subfolder)) for subfolder in required_folders)
 
 def train_test_split(folder_path: str):
-    """Perform train/test split on the data."""
+    """
+    Perform train/test split on the data in the given folder.
+
+    This function:
+    1. Creates train and test directories.
+    2. Moves 'normal' data to train directory.
+    3. Moves case data to test directory.
+    4. Balances normal samples in test set based on case samples.
+
+    Args:
+        folder_path (str): Path to the folder containing the data to split.
+    """
     print(f"Performing train/test split for: {folder_path}")
     
     for dir_name in ['train', 'test']:
@@ -54,14 +73,31 @@ def train_test_split(folder_path: str):
         print("No non-empty case folders found. No files moved to test/normal.")
 
 def calculate_percentiles(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
-    """Calculate min and max values (1st and 99th percentiles) for a single file."""
+    """
+    Calculate min and max values (1st and 99th percentiles) for a single file.
+
+    Args:
+        file_path (str): Path to the .npy file to process.
+
+    Returns:
+        tuple: (min_vals, max_vals) where each is a numpy array of percentile values.
+    """
     data = np.load(file_path)
     min_vals = np.percentile(data, 1, axis=(0, 1))
     max_vals = np.percentile(data, 99, axis=(0, 1))
     return min_vals, max_vals
 
 def scale_file(args: Tuple[str, np.ndarray, np.ndarray, str]):
-    """Scale a single file based on its min and max values."""
+    """
+    Scale a single file based on its min and max values.
+
+    Args:
+        args (tuple): (input_file, min_vals, max_vals, output_file)
+            input_file (str): Path to the input .npy file.
+            min_vals (np.ndarray): Array of minimum values for scaling.
+            max_vals (np.ndarray): Array of maximum values for scaling.
+            output_file (str): Path to save the scaled .npy file.
+    """
     input_file, min_vals, max_vals, output_file = args
     data = np.load(input_file)
     scaled_data = (data - min_vals) / (max_vals - min_vals)
@@ -69,7 +105,18 @@ def scale_file(args: Tuple[str, np.ndarray, np.ndarray, str]):
     np.save(output_file, scaled_data)
 
 def process_orchard(orchard_path: str, output_path: str):
-    """Process a single orchard: calculate percentiles and scale data."""
+    """
+    Process a single orchard: calculate percentiles and scale data.
+
+    This function:
+    1. Calculates percentiles for all .npy files in the orchard.
+    2. Scales all data based on calculated percentiles.
+    3. Saves scaled data to the output path.
+
+    Args:
+        orchard_path (str): Path to the orchard folder to process.
+        output_path (str): Path to save the processed data.
+    """
     print(f"Processing orchard: {orchard_path}")
     
     # Calculate percentiles
@@ -94,7 +141,15 @@ def process_orchard(orchard_path: str, output_path: str):
                                      [max_vals]*len(file_list), output_file_list))
 
 def calculate_mean_std(orchard_path: str) -> Tuple[np.ndarray, np.ndarray]:
-    """Calculate mean and standard deviation for an orchard using only train/normal data."""
+    """
+    Calculate mean and standard deviation for an orchard using only train/normal data.
+
+    Args:
+        orchard_path (str): Path to the orchard folder.
+
+    Returns:
+        tuple: (mean, std) where each is a numpy array of values or (None, None) if no data found.
+    """
     train_normal_path = os.path.join(orchard_path, "train", "normal")
     
     if not os.path.exists(train_normal_path):
@@ -123,7 +178,20 @@ def calculate_mean_std(orchard_path: str) -> Tuple[np.ndarray, np.ndarray]:
     std = np.sqrt(data_sq_sum / total_pixels - np.square(mean))
     
     return mean, std
+
 def main(root_dir: str, output_dir: str):
+    """
+    Main function to process all orchards in the root directory.
+
+    This function:
+    1. Identifies orchard folders in the root directory.
+    2. Processes each orchard (scaling and train/test split).
+    3. Calculates and saves mean and standard deviation for each orchard.
+
+    Args:
+        root_dir (str): Path to the root directory containing orchard folders.
+        output_dir (str): Path to save the processed data and statistics.
+    """
     orchards = [orchard for orchard in os.listdir(root_dir) 
                 if os.path.isdir(os.path.join(root_dir, orchard)) and 
                 is_orchard_folder(os.path.join(root_dir, orchard))]

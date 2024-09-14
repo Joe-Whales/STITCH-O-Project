@@ -12,11 +12,32 @@ from utils.misc_helper import load_state, update_config
 from datasets.data_builder import build_dataloader
 
 def load_config(config_path):
+    """
+    Load and update the configuration from a YAML file.
+
+    Args:
+        config_path (str): Path to the YAML configuration file.
+
+    Returns:
+        EasyDict: Updated configuration dictionary.
+    """
     with open(config_path, 'r') as f:
         config = EasyDict(yaml.load(f, Loader=yaml.FullLoader))
     return update_config(config)
 
 def encode_pred(preds):
+    """
+    Encode predictions by reshaping and calculating the mean.
+
+    Args:
+        preds (numpy.ndarray): Prediction array of shape (batch_size, ...).
+
+    Returns:
+        numpy.ndarray: Encoded predictions of shape (batch_size,).
+
+    Raises:
+        ValueError: If the input shape is unexpected.
+    """
     if len(preds.shape) == 4:
         return preds.reshape(preds.shape[0], -1).mean(axis=1)
     elif len(preds.shape) == 3:
@@ -25,6 +46,17 @@ def encode_pred(preds):
         raise ValueError(f"Unexpected shape for preds: {preds.shape}")
 
 def classify_sample(anomaly_score, thresholds):
+    """
+    Classify a sample based on its anomaly score and given thresholds.
+
+    Args:
+        anomaly_score (float): The anomaly score of the sample.
+        thresholds (dict): Dictionary containing 'all_case_1' and 'all_case_2' threshold values.
+
+    Returns:
+       
+        str: Classification result - "Anomalous (Below Threshold)", "Anomalous (Above Threshold)", or "Normal".
+    """
     lower_threshold = thresholds['all_case_1']
     upper_threshold = thresholds['all_case_2']
     
@@ -36,6 +68,16 @@ def classify_sample(anomaly_score, thresholds):
         return "Normal"
 
 def calculate_orchard_metrics(anomaly_scores, classifications):
+    """
+    Calculate various metrics for an orchard based on anomaly scores and classifications.
+
+    Args:
+        anomaly_scores (list): List of anomaly scores for the orchard.
+        classifications (list): List of classifications for the orchard samples.
+
+    Returns:
+        tuple: Contains mean_score, top5_score, bottom5_score, and anomalous_percentage.
+    """    
     mean_score = np.mean(anomaly_scores)
     top5_score = np.mean(sorted(anomaly_scores, reverse=True)[:5])
     bottom5_score = np.mean(sorted(anomaly_scores)[:5])
@@ -43,6 +85,15 @@ def calculate_orchard_metrics(anomaly_scores, classifications):
     return mean_score, top5_score, bottom5_score, anomalous_percentage
 
 def classify_orchard(orchard_data):
+    """
+    Classify an orchard based on various metrics and provide insights.
+
+    Args:
+        orchard_data (dict): Dictionary containing orchard metrics including anomaly scores and percentages.
+
+    Returns:
+        str: Classification result and insights about the orchard.
+    """
     bottom_5_avg = orchard_data['Bottom 5 mean anomaly score']
     top_5_avg = orchard_data['Top 5 mean anomaly score']
     mean_score = orchard_data['Mean anomaly score']
@@ -97,6 +148,18 @@ def classify_orchard(orchard_data):
     return result
 
 def main(args):
+    """
+    Main function to run inference on the validation loader.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments containing the configuration file path.
+
+    This function performs the following steps:
+    1. Load the configuration and model
+    2. Process samples using the model
+    3. Classify samples and calculate metrics
+    4. Print results for each class and overall statistics
+    """
     config = load_config(args.config)
     
     model = ModelHelper(config.net)

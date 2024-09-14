@@ -14,6 +14,15 @@ class_labels = {
 }
 
 def read_stats(orchard_path):
+    """
+    Read mean and standard deviation statistics for an orchard.
+
+    Args:
+        orchard_path (str): Path to the orchard directory.
+
+    Returns:
+        tuple: (mean, std) where each is a list of values or None if not found.
+    """
     stats_path = os.path.join(orchard_path, "data_stats")
     mean_path = os.path.join(stats_path, "train_means.npy")
     std_path = os.path.join(stats_path, "train_sdv.npy")
@@ -26,6 +35,20 @@ def read_stats(orchard_path):
         return None, None
 
 def process_directory(dir_path, class_name, split, orchard_name, mean, std):
+    """
+    Process a directory and generate metadata for its contents.
+
+    Args:
+        dir_path (str): Path to the directory to process.
+        class_name (str): Name of the class (e.g., "normal", "case_1", etc.).
+        split (str): Dataset split (e.g., "train" or "test").
+        orchard_name (str): Name of the orchard.
+        mean (list): Mean values for normalization.
+        std (list): Standard deviation values for normalization.
+
+    Returns:
+        list: List of metadata entries for files in the directory.
+    """
     metadata = []
     for filename in os.listdir(dir_path):
         if filename.endswith(".npy"):
@@ -43,6 +66,21 @@ def process_directory(dir_path, class_name, split, orchard_name, mean, std):
     return metadata
 
 def main(root_dir, verbose, totals):
+    """
+    Main function to generate metadata for the orchard dataset.
+
+    This function:
+    1. Processes all orchards in the root directory.
+    2. Generates metadata for training and test sets.
+    3. Balances normal and defective samples for each case.
+    4. Generates statistics if verbose mode is enabled.
+    5. Saves metadata to JSON files.
+
+    Args:
+        root_dir (str): Root directory of the dataset.
+        verbose (bool): If True, print detailed statistics.
+        totals (bool): If True, only print total statistics.
+    """
     all_metadata = {"train": [], "test": []}
     case_metadata = defaultdict(lambda: defaultdict(list))
     normal_metadata = defaultdict(list)

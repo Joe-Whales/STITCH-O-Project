@@ -22,7 +22,23 @@ from torchvision import transforms
 logger = logging.getLogger("global_logger")
 
 
-def build_custom_dataloader(cfg, training, distributed=True):
+def build_custom_dataloader(cfg, training):
+    """
+    Build a custom DataLoader based on the provided configuration.
+
+    Args:
+        cfg (dict): Configuration dictionary containing dataloader settings.
+        training (bool): Whether the dataloader is for training or testing.
+
+    Returns:
+        DataLoader: A PyTorch DataLoader object configured according to the input parameters.
+
+    This function:
+    1. Sets up the transform function.
+    2. Creates a CustomDataset instance.
+    3. Sets up a RandomSampler.
+    4. Creates and returns a DataLoader with the specified configuration.
+    """
 
     transform_fn = transforms.Resize(cfg["input_size"])
 
@@ -51,13 +67,31 @@ def build_custom_dataloader(cfg, training, distributed=True):
 
 
 class CustomDataset(Dataset):
-    def __init__(
-        self,
-        meta_file,
-        training,
-        transform_fn,
-        image_path,
-    ):
+    """
+    A custom dataset class for loading and preprocessing image data.
+
+    Attributes:
+        meta_file (str): Path to the metadata file.
+        training (bool): Whether the dataset is for training.
+        transform_fn (callable): Function to apply transformations to images.
+        image_path (str): Base path for image files.
+        metas (list): List of metadata for each item in the dataset.
+
+    Methods:
+        __len__(): Return the number of items in the dataset.
+        __getitem__(index): Get a single item from the dataset.
+    """
+    
+    def __init__(self, meta_file, training, transform_fn, image_path):
+        """
+        Initialize the CustomDataset.
+
+        Args:
+            meta_file (str): Path to the metadata file.
+            training (bool): Whether the dataset is for training.
+            transform_fn (callable): Function to apply transformations to images.
+            image_path (str): Base path for image files.
+        """
         self.meta_file = meta_file
         self.training = training
         self.transform_fn = transform_fn
@@ -71,9 +105,39 @@ class CustomDataset(Dataset):
                 self.metas.append(meta)
 
     def __len__(self):
+        """
+        Get the number of items in the dataset.
+
+        Returns:
+            int: The number of items in the dataset.
+        """
         return len(self.metas)
 
     def __getitem__(self, index):
+        """
+        Get a single item from the dataset.
+
+        Args:
+            index (int): Index of the item to retrieve.
+
+        Returns:
+            dict: A dictionary containing the item data, including:
+                - filename (str): The name of the image file.
+                - height (int): The height of the image.
+                - width (int): The width of the image.
+                - label (int): The label of the image.
+                - clsname (str): The class name of the image.
+                - image (Tensor): The preprocessed image tensor.
+                - mask (Tensor): The preprocessed mask tensor.
+
+        This method performs the following steps:
+        1. Load metadata for the item.
+        2. Read the image file.
+        3. Generate or read the corresponding mask.
+        4. Apply transformations to the image and mask.
+        5. Normalize the image.
+        6. Ensure the image has 3 channels.
+        """
         input = {}
         meta = self.metas[index]
 

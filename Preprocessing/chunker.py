@@ -1,5 +1,4 @@
 import argparse
-import math
 import itertools
 import numpy as np
 import os
@@ -7,10 +6,8 @@ import rasterio
 from rasterio.windows import Window
 from rasterio.enums import Resampling
 from rasterio.windows import from_bounds
-
 import re
 import shutil
-import sys
 import tqdm
 import tqdm.contrib
 import tqdm.contrib.itertools
@@ -18,14 +15,28 @@ import yaml
 
 def getTIFDimensions(file_name):
     """
-    RETURNS WIDTH AND HEIGHT FOR TIF FILE
+    Get the width and height of a TIF file.
+
+    Args:
+        file_name (str): Path to the TIF file.
+
+    Returns:
+        tuple: (width, height) of the TIF file.
     """
     with rasterio.open(file_name) as file:
         return file.width, file.height
 
 def get_patch_size(temp_dir, patch_size_deg, overlap_size_deg):
     """
-    given a patch size in degrees, calculate the number of pixels for the patch size (degrees to number of pixels x and y)
+    Calculate the number of pixels for the patch size and overlap.
+
+    Args:
+        temp_dir (str): Directory containing the reference file.
+        patch_size_deg (float): Patch size in degrees.
+        overlap_size_deg (float): Overlap size in degrees.
+
+    Returns:
+        tuple: (patch_size_x, patch_size_y, overlap_size_x, overlap_size_y) in pixels.
     """
     # all files have been clipped to the same extent and scaled to the same resolution and therefore you can read pixel size from any of the files
     files = os.listdir(temp_dir)
@@ -48,7 +59,15 @@ def get_patch_size(temp_dir, patch_size_deg, overlap_size_deg):
 
 def clip_then_upscale(files, upscale_width, upscale_height, output_dir, reference, verbose=False):
     """
-    CLIP RASTERS WITH RESPECT TO THE EXTENT WITH RESPECT TO ... AND THEN UPSCALE ALL RASTERS TO THE SAME SIZE AND WRITE TO TEMP
+    Clip rasters with respect to the extent of a reference file, then upscale all rasters to the same size.
+
+    Args:
+        files (list): List of file paths to process.
+        upscale_width (int): Target width for upscaling.
+        upscale_height (int): Target height for upscaling.
+        output_dir (str): Directory to save processed files.
+        reference (str): Path to the reference file for clipping.
+        verbose (bool): If True, print detailed information.
     """
     os.makedirs(output_dir, exist_ok=True)
     for file_name in tqdm.tqdm(files, desc="Upscaling files", disable=verbose):
@@ -139,8 +158,21 @@ def clip_then_upscale(files, upscale_width, upscale_height, output_dir, referenc
         
 def create_blocks_upscaling(orchard_id, files, dimensions, upscale_width, upscale_height, block_size, overlap, anomaly_threshold, output_dir, mask_file="mask.tif", reference="reg.tif",  verbose=False):
     """
-    CREATES BLOCK BIN FILES FOR VARIOUS DIMENSIONS
-    PARAMETERS: Root path to files(for block naming), List of file names, list of bands for each file, desired width and height to upscale to, block size, block overlap, output directory for chunks
+    Create block bin files for various dimensions and classifications.
+
+    Args:
+        orchard_id (str): Identifier for the orchard.
+        files (list): List of file paths to process.
+        dimensions (list): List of band dimensions for each file.
+        upscale_width (int): Target width for upscaling.
+        upscale_height (int): Target height for upscaling.
+        block_size (float): Size of each block in degrees.
+        overlap (float): Overlap between blocks in degrees.
+        anomaly_threshold (float): Threshold for classifying anomalous blocks.
+        output_dir (str): Directory to save output files.
+        mask_file (str): Path to the mask file.
+        reference (str): Path to the reference file.
+        verbose (bool): If True, print detailed information.
     """
     # make directories
     case_1_dir = os.path.join(output_dir, "case_1")
@@ -232,7 +264,13 @@ def create_blocks_upscaling(orchard_id, files, dimensions, upscale_width, upscal
 
 def test_upscaling(files, upscale_width, upscale_height, output_dir):
     """
-    TEST UPSCALING OF TIF IMAGES
+    Test upscaling of TIF images.
+
+    Args:
+        files (list): List of file paths to process.
+        upscale_width (int): Target width for upscaling.
+        upscale_height (int): Target height for upscaling.
+        output_dir (str): Directory to save upscaled images.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -275,6 +313,15 @@ def test_upscaling(files, upscale_width, upscale_height, output_dir):
                 dst.colorinterp = color_interps
 
 def get_files_from_project(project_dir: str) -> list[str]:
+    """
+    Get a list of file paths for a project.
+
+    Args:
+        project_dir (str): Path to the project directory.
+
+    Returns:
+        list: List of file paths for the project.
+    """
     return [project_dir + '/orthos/' + f for f in [
         'data-analysis/lwir.tif',
         'data-analysis/red.tif',
@@ -283,6 +330,15 @@ def get_files_from_project(project_dir: str) -> list[str]:
     ]]
 
 def main():
+    """
+    Main function to run the chunking process.
+
+    This function:
+    1. Parses command-line arguments
+    2. Reads the configuration file
+    3. Processes each configuration document
+    4. Calls create_blocks_upscaling for each project
+    """
     parser = argparse.ArgumentParser(description="A tool for chunking large orthomosaic TIF files into smaller patches.")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     parser.add_argument("config", type=str, help="path to the .yaml configuration file")

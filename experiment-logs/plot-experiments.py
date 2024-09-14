@@ -6,6 +6,15 @@ import matplotlib as mpl
 import numpy as np
 
 def load_specific_files(root_dir):
+    """
+    Load specific CSV files for different models from the root directory.
+
+    Args:
+        root_dir (str): Path to the root directory containing experiment folders.
+
+    Returns:
+        dict: A dictionary where keys are model names and values are pandas DataFrames of the CSV data.
+    """
     specific_files = {
         'Baseline': os.path.join(root_dir, 'UniAD vs Baseline Model', 'Baseline.csv'),
         'UniAD (dropout and jitter)':os.path.join(root_dir, 'UniAD vs Baseline Model', 'UniAD.csv'),
@@ -34,6 +43,17 @@ def load_specific_files(root_dir):
     return data
 
 def plot_overall_comparison(data):
+    """
+    Plot overall comparison graphs for Case 1 and Case 2 AUROC across all models.
+
+    Args:
+        data (dict): A dictionary where keys are model names and values are pandas DataFrames of the CSV data.
+
+    This function creates two plots:
+    1. Case 1 AUROC comparison across all models
+    2. Case 2 AUROC comparison across all models
+    Each plot shows the AUROC values over epochs for different models, with the highest point marked and annotated.
+    """
     for case in ['Case 1', 'Case 2']:
         plt.figure(figsize=(15, 10))
         column = f'all_case_{case[-1]}_AUROC'
@@ -58,6 +78,16 @@ def plot_overall_comparison(data):
         plt.show()
 
 def process_csv_files(directory):
+    """
+    Process all CSV files in the given directory and its subdirectories.
+
+    Args:
+        directory (str): Path to the root directory to search for CSV files.
+
+    Returns:
+        dict: A nested dictionary where the first level keys are experiment names,
+              the second level keys are model names, and the values are pandas DataFrames of the CSV data.
+    """
     experiments = {}
     for root, dirs, files in os.walk(directory):
         if files:
@@ -72,6 +102,20 @@ def process_csv_files(directory):
     return experiments
 
 def plot_experiment_results(experiment_name, results):
+    """
+    Plot the results for a single experiment.
+
+    Args:
+        experiment_name (str): Name of the experiment.
+        results (dict): A dictionary where keys are model names and values are pandas DataFrames of the CSV data.
+
+    This function creates a figure with three subplots:
+    1. Case 1 AUROC
+    2. Case 2 AUROC
+    3. Average AUROC
+    Each subplot shows the AUROC values over epochs for different models in the experiment, 
+    with the highest point marked and annotated.
+    """
     fig = plt.figure(figsize=(15, 20))  # Adjusted figure height
     
     # Create 7 subplot spaces
@@ -135,6 +179,18 @@ def plot_experiment_results(experiment_name, results):
     plt.show()
     
 def main(root_dir):
+    """
+    Main function to process CSV files and generate plots.
+
+    Args:
+        root_dir (str): Path to the root directory containing experiment folders with CSV files.
+
+    This function:
+    1. Loads specific files for overall comparison
+    2. Plots overall comparison graphs
+    3. Processes all CSV files in the directory and its subdirectories
+    4. Plots individual experiment results
+    """
     # Load specific files for overall comparison
     specific_data = load_specific_files(root_dir)
     
