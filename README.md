@@ -11,6 +11,7 @@ STITCH-O (Using anomaly detection to identify stitching artefacts in drone-based
   - [Table of Contents](#table-of-contents)
   - [Background](#background)
   - [Features](#features)
+  - [Disclaimer](#disclaimer)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Training](#training)
@@ -38,6 +39,9 @@ Precision agriculture increasingly relies on drone-based imaging for monitoring 
 - Enhanced evaluation metrics tailored for stitching artifact detection
 - Inference pipeline for whole-orchard classification
 - Baseline model implementation for performance comparison
+
+## Disclaimer
+The data used in this project has not been made publicly available.
 
 ## Installation
 
